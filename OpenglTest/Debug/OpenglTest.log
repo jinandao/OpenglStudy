@@ -1,0 +1,6 @@
+﻿  main.cpp
+D:\OpenglStudy\OpenglTest2\OpenglTest\Camera.h(31,116): warning C4114:  多次使用同一类型限定符
+D:\OpenglStudy\OpenglTest2\OpenglTest\main.cpp(89,39): warning C4305:  “=”: 从“double”到“float”截断
+D:\OpenglStudy\OpenglTest2\OpenglTest\main.cpp(94,35): warning C4305:  “=”: 从“double”到“float”截断
+D:\OpenglStudy\OpenglTest2\OpenglTest\main.cpp(95,35): warning C4305:  “=”: 从“double”到“float”截断
+  OpenglTest.vcxproj -> D:\OpenglStudy\OpenglTest2\Debug\OpenglTest.exe
