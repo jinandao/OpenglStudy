@@ -42,6 +42,12 @@
     <ClCompile Include="shadow_map_fbo.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Game.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="GameLogic.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Dependancies\GL\freeglut.h">
@@ -198,6 +204,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="shadow_map_fbo.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Game.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="GameLogic.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

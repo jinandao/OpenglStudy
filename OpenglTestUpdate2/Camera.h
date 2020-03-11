@@ -1,10 +1,13 @@
-#pragma once
+/*
+相机相关代码文件
+*/
 
+#pragma once
 #include "MathTools.h"
 
 class Camera
 {
-private:
+public:
 	void Init();
 	void Update();
 
@@ -53,5 +56,6 @@ public:
 	void OnMouse(int x, int y);
 
 	void OnRender();
+
 };
 

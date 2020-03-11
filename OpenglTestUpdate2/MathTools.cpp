@@ -1,3 +1,7 @@
+/*
+数学相关代码文件
+*/
+
 #include "MathTools.h"
 #include <math.h>
 

@@ -1,3 +1,7 @@
+/*
+相机相关代码文件
+*/
+
 #include "Camera.h"
 
 const static int MARGIN = 10;
@@ -147,3 +151,4 @@ void Camera::OnRender()
 		Update();
 	}
 }
+

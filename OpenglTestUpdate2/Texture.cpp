@@ -17,7 +17,7 @@ Texture::Texture(unsigned int ID, const std::string& path) :rendererID(ID), file
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-	std::cout << "width:" << width << " height:" << height << std::endl;
+	std::cout << "path: "<<path<<" "<<"width:" << width << " height:" << height << std::endl;
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, localBuffer);//将图片转移到纹理？
 	glBindTexture(GL_TEXTURE_2D, 0);
 

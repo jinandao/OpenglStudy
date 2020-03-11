@@ -1,7 +1,14 @@
+/*
+绘制物体相关的代码文件，包括加载模型、自定义简易模型
+*/
+
 #include "mesh.h"
 #include <iostream>
+#include <string>
 
-Mesh::MeshEntry::MeshEntry()
+int Mesh::meshNums = 0;
+
+MeshEntry::MeshEntry()
 {
 	VB = INVALID_OGL_VALUE;
 	IB = INVALID_OGL_VALUE;
@@ -9,20 +16,20 @@ Mesh::MeshEntry::MeshEntry()
 	MaterialIndex = INVALID_MATERIAL;
 };
 
-Mesh::MeshEntry::~MeshEntry()
+MeshEntry::~MeshEntry()
 {
 	if (VB != INVALID_OGL_VALUE)
 	{
 		glDeleteBuffers(1, &VB);
 	}
-
 	if (IB != INVALID_OGL_VALUE)
 	{
 		glDeleteBuffers(1, &IB);
 	}
+	std::cout << "delete mesh" << std::endl;
 }
 
-void Mesh::MeshEntry::Init(const std::vector<Vertex>& Vertices,
+void MeshEntry::Init(const std::vector<Vertex>& Vertices,
 	const std::vector<unsigned int>& Indices)
 {
 	NumIndices = Indices.size();
@@ -38,10 +45,12 @@ void Mesh::MeshEntry::Init(const std::vector<Vertex>& Vertices,
 
 Mesh::Mesh()
 {
+	meshNums += 1;
 }
 
 Mesh::~Mesh()
 {
+	meshNums -= 1;
 	Clear();
 }
 
@@ -137,6 +146,7 @@ bool Mesh::InitMaterials(const aiScene* pScene, const std::string& Filename)
 	bool Ret = true;
 
 	// Initialize the materials
+	
 	for (unsigned int i = 0; i < pScene->mNumMaterials; i++) {
 		const aiMaterial* pMaterial = pScene->mMaterials[i];
 
@@ -145,10 +155,9 @@ bool Mesh::InitMaterials(const aiScene* pScene, const std::string& Filename)
 		if (pMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
 			aiString Path;
 
-			if (pMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {
-				std::string FullPath = Dir + "/" + Path.data;
-				std::cout << "Path:" << FullPath << std::endl;
-				FullPath = "Content/test.png";
+			if (pMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {				
+				std::string FullPath = "Content/test"+ std::to_string(meshNums)+".jpg";
+				//std::cout << meshNums << std::endl;
 				m_Textures[i] = new Texture(i+1, FullPath.c_str());
 				/*if (!m_Textures[i]->Load()) {
 					printf("Error loading texture '%s'\n", FullPath.c_str());
@@ -171,7 +180,34 @@ bool Mesh::InitMaterials(const aiScene* pScene, const std::string& Filename)
 	return Ret;
 }
 
-void Mesh::Render()
+Geometry::~Geometry()
+{
+	for (unsigned int i = 0; i < m_Textures.size(); i++) {
+		if (m_Textures[i] != nullptr)
+			delete(m_Textures[i]);
+	}
+}
+
+void Geometry::AddMeshEntry(const std::vector<Vertex>& verts,const std::vector<unsigned int>& indicess,int matIndex)
+{
+	if (entryNum < m_Entries.size())
+	{
+		m_Entries[entryNum].Init(verts, indicess);
+		m_Entries[entryNum].MaterialIndex = matIndex;
+		entryNum += 1;
+	}
+}
+
+void Geometry::AddTexure(int id,std::string& path)
+{
+	if (texNum < m_Textures.size())
+	{		
+		m_Textures[texNum] = new Texture(id, path);
+		texNum += 1;
+	}
+}
+
+void DrawObject::Render() const
 {
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);

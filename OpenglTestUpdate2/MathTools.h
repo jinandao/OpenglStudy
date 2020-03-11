@@ -1,9 +1,11 @@
+/*
+数学相关代码文件
+*/
+
 #pragma once
 #include <iostream>
 
 #define M_PI 3.1415926
-//#define ToRadian(x) (float)(((x)*M_PI/180.0f))
-//#define ToDegree(x) (float)(((x)*180.0f/M_PI))
 
 float ToRadian(float x);
 
@@ -272,3 +274,4 @@ class Pipeline
 {
 
 };
+

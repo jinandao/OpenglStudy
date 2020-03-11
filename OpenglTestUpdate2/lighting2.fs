@@ -109,7 +109,7 @@ void main()
 {                                                                                           
     vec3 Normal = normalize(Normal0);                                                       
     vec4 TotalLight = CalcDirectionalLight(Normal);  
-	TotalLight += CalcPointLight(gPointLights, Normal, LightSpacePos);  	
+	//TotalLight += CalcPointLight(gPointLights, Normal, LightSpacePos);  	
                                                                                             
     vec4 SampledColor = texture2D(gSampler, TexCoord0.xy);                                  
     FragColor = SampledColor*TotalLight;                                                  

@@ -1,9 +1,20 @@
+/*
+opengl函数封装代码文件
+*/
+
 #include "OpenglTools.h"
 #include <Windows.h>
-//#include <string>
 #include <vector>
 #include <iostream>
 #include <fstream>
+
+void CreateQuad()
+{
+}
+
+void CreateBox()
+{
+}
 
 int CreateVertexBuffer(GLuint* VBO)
 {
@@ -67,7 +78,6 @@ int CreateVertexBuffer(GLuint* VBO,const unsigned int* pIndices, unsigned int In
 
 	//unsigned int VertexCount = ARRAY_SIZE_IN_ELEMENTS(Vertices);
 	//CalcNormals(pIndices, IndexCount, Vertices, VertexCount);
-
 	std::cout <<"normal:"<< Vertices[0].normal.x << " " << Vertices[0].normal.y << " " << Vertices[0].normal.z << std::endl;
 	std::cout <<"normal:"<< Vertices[1].normal.x << " " << Vertices[1].normal.y << " " << Vertices[1].normal.z << std::endl;
 	std::cout <<"normal:"<< Vertices[2].normal.x << " " << Vertices[2].normal.y << " " << Vertices[2].normal.z << std::endl;
@@ -77,6 +87,15 @@ int CreateVertexBuffer(GLuint* VBO,const unsigned int* pIndices, unsigned int In
 	glBindBuffer(GL_ARRAY_BUFFER, *VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
 	return sizeof(Vertices) / sizeof(Vertex);
+}
+
+void GetParamsInShader(GLuint shader, GLuint& shaderParam, const char* paramName)
+{
+	shaderParam = glGetUniformLocation(shader, paramName);
+	if (shaderParam == 0xFFFFFFFF)
+	{
+		std::cout << paramName << " not found" << std::endl;
+	}
 }
 
 bool ReadFile(const char* pFileName, std::string& outFile)
@@ -117,4 +136,45 @@ void CalcNormals(const unsigned int* pIndices, unsigned int IndexCount, Vertex* 
 	for (unsigned int i = 0; i < VertexCount; i++) {
 		pVertices[i].normal.Normalize();
 	}
+}
+
+Matrix4f GetWMatrixForObject(Vector3f Scale, Vector3f Rotate, Vector3f Translation)
+{
+	Matrix4f ScaleTrans, RotateTrans, TranslationTrans;
+	ScaleTrans.InitScaleTransform(Scale.x, Scale.y, Scale.z);
+	RotateTrans.InitRotateTransform(Rotate.x, Rotate.y, Rotate.z);
+	TranslationTrans.InitTranslationTransform(Translation.x, Translation.y, Translation.z);
+
+	//Ret = TranslationTrans * RotateTrans * ScaleTrans;
+	return Matrix4f(TranslationTrans * RotateTrans * ScaleTrans);
+}
+
+Matrix4f GetWMatrixForCamera(Vector3f Target,Vector3f Up, Vector3f Transition)
+{
+	Matrix4f CameraTranslationTrans, CameraRotateTrans;
+	CameraTranslationTrans.InitTranslationTransform(Transition.x, Transition.y, Transition.z);
+	CameraRotateTrans.InitCameraTransform(Target, Up);
+
+	return Matrix4f(CameraTranslationTrans* CameraRotateTrans);
+}
+
+void DrawCall(GLuint& VBO,GLuint& IBO,int length)
+{
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(2);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)12);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)20);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+
+	glDrawElements(GL_TRIANGLES, length, GL_UNSIGNED_INT, 0);
+
+	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);
+	glDisableVertexAttribArray(2);
 }

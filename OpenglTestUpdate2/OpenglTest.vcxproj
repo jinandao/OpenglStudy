@@ -129,6 +129,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="Game.cpp" />
+    <ClCompile Include="GameLogic.cpp" />
     <ClCompile Include="Lighting.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MathTools.cpp" />
@@ -184,6 +186,8 @@
     <ClInclude Include="Dependancies\GL\glfw3.h" />
     <ClInclude Include="Dependancies\GL\STB\stb_image.h" />
     <ClInclude Include="Dependancies\STB\stb_image.h" />
+    <ClInclude Include="Game.h" />
+    <ClInclude Include="GameLogic.h" />
     <ClInclude Include="Lighting.h" />
     <ClInclude Include="MathTools.h" />
     <ClInclude Include="mesh.h" />

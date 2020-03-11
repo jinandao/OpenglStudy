@@ -1,5 +1,6 @@
 #include "Shader.h"
 #include <iostream>
+#include "OpenglTools.h"
 
 void AddShader(GLuint ShaderProgram, Shader shader)
 {
@@ -18,9 +19,6 @@ void AddShader(GLuint ShaderProgram, Shader shader)
 	}
 	test[shader.GetShaderText().size()] = '\0';
 	p[0] = test;
-	//std::cout <<"test1 "<< shader.GetShaderText().c_str() << std::endl;
-	//std::cout <<"test2 "<< test << std::endl;
-	//std::cout << "test3 " << p[0] << std::endl;
 	
 	GLint Lengths[1];
 	Lengths[0] = strlen(shader.GetShaderText().c_str());
@@ -39,4 +37,43 @@ void AddShader(GLuint ShaderProgram, Shader shader)
 		exit(1);
 	}
 	glAttachShader(ShaderProgram, ShaderObj);
+}
+
+void CompileShader(GLuint& shaderProgram, const char* vsFileName,const char* fsFileName)
+{
+	shaderProgram = glCreateProgram();
+	if (shaderProgram == 0)
+	{
+		std::cout << "Error creating shader program\n" << std::endl;
+		exit(1);
+	}
+	std::string vs, fs;
+	if (!ReadFile(vsFileName, vs))
+	{
+		exit(1);
+	}
+	if (!ReadFile(fsFileName, fs))
+	{
+		exit(1);
+	}
+	Shader vsShader(vs, GL_VERTEX_SHADER);
+	Shader fsShader(fs, GL_FRAGMENT_SHADER);
+	AddShader(shaderProgram, vsShader);
+	AddShader(shaderProgram, fsShader);
+	GLint Success = 0;
+	GLchar ErrorLog[1024] = { 0 };
+	glLinkProgram(shaderProgram);
+	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &Success);
+	if (Success == 0) {
+		glGetProgramInfoLog(shaderProgram, sizeof(ErrorLog), NULL, ErrorLog);
+		fprintf(stderr, "Error linking shader program: '%s'\n", ErrorLog);
+		exit(1);
+	}
+	glValidateProgram(shaderProgram);
+	glGetProgramiv(shaderProgram, GL_VALIDATE_STATUS, &Success);
+	if (!Success) {
+		glGetProgramInfoLog(shaderProgram, sizeof(ErrorLog), NULL, ErrorLog);
+		fprintf(stderr, "Invalid shader program: '%s'\n", ErrorLog);
+		exit(1);
+	}
 }
