@@ -26,7 +26,7 @@ MeshEntry::~MeshEntry()
 	{
 		glDeleteBuffers(1, &IB);
 	}
-	std::cout << "delete mesh" << std::endl;
+	//std::cout << "delete mesh" << std::endl;
 }
 
 void MeshEntry::Init(const std::vector<Vertex>& Vertices,

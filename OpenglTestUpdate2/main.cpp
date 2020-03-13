@@ -10,12 +10,10 @@
 #include "MathTools.h"
 #include "shadow_map_fbo.h"
 #include "Game.h"
+#include "GameLogic.h"
 
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
-
-int length;
-int length2;
 
 const char* pVSFileName = "lighting2.vs";
 const char* pFSFileName = "lighting2.fs";
@@ -34,9 +32,6 @@ Geometry* pGeo = nullptr;
 Geometry* pGeo2 = nullptr;
 
 Player* player = nullptr;
-Enemy* enemy = nullptr;
-Enemy* enemy2 = nullptr;
-Bullet* bullet = nullptr;
 
 Camera* pShadowCamera = nullptr;
 
@@ -90,8 +85,10 @@ Vector3f pmesh2scale(0.1, 0.1, 0.1);
 
 Vector3f quadPos(0, 0, 0);
 Vector3f quadRotate(0, 0, 0);
-Vector3f quadScale(50, 0.1, 50);
+Vector3f quadScale(100, 0.1, 100);
 
+std::vector<Bullet*> bullets;
+std::vector<std::pair<Enemy*,EnemyAI*>> enemies;
 
 static void LightInit()
 {
@@ -214,13 +211,15 @@ static void RenderPass()
 	shadowMapFBO.BindForReading(1);
 
 	//初始化相机相关矩阵
+	if(player!=nullptr)
+		pCamera->SetTarget(player->GetPos()+Vector3f(0,-9,0));
+
 	m_Vtransformation = GetWMatrixForCamera(pCamera->GetTarget(),pCamera->GetUp(),pCamera->GetPos());
 
 	Matrix4f shadow_Vtransformation, shadow_VP, shadow_WVP;
 
 	//绘制物体3
-	//pTexture->Bind();
-
+	pTexture->Bind();
 	m_Wtransformation = GetWMatrixForObject(quadScale, quadRotate, quadPos);
 	m_WVPtransformation = m_VPtransformation * m_Wtransformation;
 	glUniformMatrix4fv(gWorld, 1, GL_TRUE, (const GLfloat*)m_Wtransformation);
@@ -236,61 +235,72 @@ static void RenderPass()
 	
 	//DrawCall(VBO, IBO, length2);
 	pGeo->Render();
-	
-	m_Wtransformation = GetWMatrixForObject(Vector3f(10,10,10), quadRotate, pmesh1pos+Vector3f(5,5,3));
-	m_WVPtransformation = m_VPtransformation * m_Wtransformation;
-	glUniformMatrix4fv(gWorld, 1, GL_TRUE, (const GLfloat*)m_Wtransformation);
-	glUniformMatrix4fv(gWVPLocation, 1, GL_TRUE, (const GLfloat*)m_WVPtransformation);
-	pGeo2->Render();
 
 	//初始化物体1相关矩阵
-	m_VPtransformation = m_ProjTransformation * m_Vtransformation;
-	Matrix4f m_Wtransformation = GetWMatrixForObject(player->GetScale(), player->GetRotation(), player->GetPos());
-	m_WVPtransformation = m_VPtransformation * m_Wtransformation;
-	glUniformMatrix4fv(gWorld, 1, GL_TRUE, (const GLfloat*)m_Wtransformation);
-	glUniformMatrix4fv(gWVPLocation, 1, GL_TRUE, (const GLfloat*)m_WVPtransformation);
+	if (player!=nullptr&&player->isDead==false)
+	{
+		m_VPtransformation = m_ProjTransformation * m_Vtransformation;
+		Matrix4f m_Wtransformation = GetWMatrixForObject(player->GetScale(), player->GetRotation(), player->GetPos());
+		m_WVPtransformation = m_VPtransformation * m_Wtransformation;
+		glUniformMatrix4fv(gWorld, 1, GL_TRUE, (const GLfloat*)m_Wtransformation);
+		glUniformMatrix4fv(gWVPLocation, 1, GL_TRUE, (const GLfloat*)m_WVPtransformation);
+		//为物体1调整灯光矩阵
+		//pShadowCamera->SetTarget(pmesh1pos);
+		//初始化灯光相机相关矩阵	
+		//shadow_Vtransformation = GetWMatrixForCamera(pShadowCamera->GetTarget(), pShadowCamera->GetUp(), pShadowCamera->GetPos());
+		//shadow_VP = m_ProjTransformation * shadow_Vtransformation;
+		//shadow_WVP = shadow_VP * m_Wtransformation;
+		//glUniformMatrix4fv(gLightWVP, 1, GL_TRUE, (const GLfloat*)shadow_WVP);
+		player->Render();
+	}
+	else if(player!=nullptr)
+	{		
+		delete player;
+		player = nullptr;
+	}
 
-	//为物体1调整灯光矩阵
-	//pShadowCamera->SetTarget(pmesh1pos);
-	//初始化灯光相机相关矩阵	
-	//shadow_Vtransformation = GetWMatrixForCamera(pShadowCamera->GetTarget(), pShadowCamera->GetUp(), pShadowCamera->GetPos());
-	//shadow_VP = m_ProjTransformation * shadow_Vtransformation;
-	//shadow_WVP = shadow_VP * m_Wtransformation;
-	//glUniformMatrix4fv(gLightWVP, 1, GL_TRUE, (const GLfloat*)shadow_WVP);
+	for (auto ite = enemies.begin(); ite != enemies.end();)
+	{
+		if(ite->first->isDead==false)
+		{
+			m_Wtransformation = GetWMatrixForObject(ite->first->GetScale(), ite->first->GetRotation(), ite->first->GetPos());
+			m_WVPtransformation = m_VPtransformation * m_Wtransformation;
+			glUniformMatrix4fv(gWorld, 1, GL_TRUE, (const GLfloat*)m_Wtransformation);
+			glUniformMatrix4fv(gWVPLocation, 1, GL_TRUE, (const GLfloat*)m_WVPtransformation);
+			ite->first->Render();
+			ite->second->Update(bullets);
+			ite++;
+		}
+		else
+		{
+			auto toDel1 = ite->first;
+			auto toDel2 = ite->second;
+			ite = enemies.erase(ite);
+			Destroy(toDel1);
+			delete toDel2;
+		}
+	}
 
-	//pMesh2->Render();
-	player->Render();
-	//绘制物体2
-	
-	m_Wtransformation = GetWMatrixForObject(enemy->GetScale(), enemy->GetRotation(), enemy->GetPos());
-	m_WVPtransformation = m_VPtransformation * m_Wtransformation;
-	glUniformMatrix4fv(gWorld, 1, GL_TRUE, (const GLfloat*)m_Wtransformation);
-	glUniformMatrix4fv(gWVPLocation, 1, GL_TRUE, (const GLfloat*)m_WVPtransformation);
-	enemy->Render();
-
-	m_Wtransformation = GetWMatrixForObject(bullet->GetScale(), bullet->GetRotation(), bullet->GetPos());
-	m_WVPtransformation = m_VPtransformation * m_Wtransformation;
-	glUniformMatrix4fv(gWorld, 1, GL_TRUE, (const GLfloat*)m_Wtransformation);
-	glUniformMatrix4fv(gWVPLocation, 1, GL_TRUE, (const GLfloat*)m_WVPtransformation);
-	bullet->GetGeo()->Render();
-	bullet->Move();
-
-	m_Wtransformation = GetWMatrixForObject(enemy2->GetScale(), enemy2->GetRotation(), enemy2->GetPos());
-	m_WVPtransformation = m_VPtransformation * m_Wtransformation;
-	glUniformMatrix4fv(gWorld, 1, GL_TRUE, (const GLfloat*)m_Wtransformation);
-	glUniformMatrix4fv(gWVPLocation, 1, GL_TRUE, (const GLfloat*)m_WVPtransformation);
-	enemy2->Render();	
-
-	//为物体2调整灯光矩阵
-	//pShadowCamera->SetTarget(pmesh2pos);
-	//初始化灯光相机相关矩阵	
-	//shadow_Vtransformation = GetWMatrixForCamera(pShadowCamera->GetTarget(), pShadowCamera->GetUp(), pShadowCamera->GetPos());
-	//shadow_VP = m_ProjTransformation * shadow_Vtransformation;
-	//shadow_WVP = shadow_VP * m_Wtransformation;
-	//glUniformMatrix4fv(gLightWVP, 1, GL_TRUE, (const GLfloat*)shadow_WVP);
-
-	//pMesh->Render();
-
+	for (auto ite=bullets.begin();ite!=bullets.end();)
+	{		
+		if ((*ite)->isEnd==false)
+		{
+			m_Wtransformation = GetWMatrixForObject((*ite)->GetScale(), (*ite)->GetRotation(), (*ite)->GetPos());
+			m_WVPtransformation = m_VPtransformation * m_Wtransformation;
+			glUniformMatrix4fv(gWorld, 1, GL_TRUE, (const GLfloat*)m_Wtransformation);
+			glUniformMatrix4fv(gWVPLocation, 1, GL_TRUE, (const GLfloat*)m_WVPtransformation);
+			(*ite)->GetGeo()->Render();
+			(*ite)->Move();
+			(*ite)->CheckHurt();
+			ite++;
+		}
+		else
+		{
+			auto toDel = *ite;
+			ite = bullets.erase(ite);
+			Destroy(toDel);
+		}
+	}
 }
 
 static void RenderSceneCB()
@@ -307,32 +317,17 @@ static void PassiveMouseCB(int x, int y)
 
 static void KeyboardCB(unsigned char Key,int x,int y)
 {	
-	std::cout << "Key:" << Key << std::endl;
-
-	if (Key == 'q')
+	//std::cout << "Key:" << Key << std::endl;
+	if (player != nullptr)
 	{
-		player->MoveForward();
-		enemy->MoveBack();
-	}
-	if (Key == 'w')
-	{
-		player->MoveBack();
-		enemy->MoveForward();
-	}
-	if (Key == 'e')
-	{
-		player->TurnLeft();
-		enemy->TurnRight();
-	}
-	if (Key == 'r')
-	{
-		player->TurnRight();
-		enemy->TurnLeft();
-	}
-	if (Key == 'a')
-	{
-		std::cout << "pos: " << player->GetPos().x << " " << player->GetPos().y << " " << player->GetPos().z << std::endl;
-		std::cout << "rotate: " << player->GetRotation().x << " " << player->GetRotation().y << " " << player->GetRotation().z << std::endl;
+		player->TakeAction(Key, bullets);
+		if (Key == 'x')
+		{
+			std::cout << "pos: " << player->GetPos().x << " " << player->GetPos().y << " " << player->GetPos().z << std::endl;
+			std::cout << "rotate: " << player->GetRotation().x << " " << player->GetRotation().y << " " << player->GetRotation().z << std::endl;
+			std::cout << "camera pos: " << pCamera->GetPos().x << " " << pCamera->GetPos().y << " " << pCamera->GetPos().z << std::endl;
+			std::cout << "camera target: " << pCamera->GetTarget().x << " " << pCamera->GetTarget().y << " " << pCamera->GetTarget().z << std::endl;
+		}
 	}
 }
 
@@ -374,21 +369,12 @@ int main(int argc, char** argv)
 	}
 
 	LightInit();
-	//pCamera = new Camera(WINDOW_WIDTH,WINDOW_HEIGHT);
-	//pCamera = new Camera(WINDOW_WIDTH, WINDOW_HEIGHT,Vector3f(6,-13,23),Vector3f(0.4,-0.22,0.89),Vector3f(0,1,0));
-	pCamera = new Camera(WINDOW_WIDTH, WINDOW_HEIGHT, Vector3f(0, -20, 50), Vector3f(0.5, -0.8, 0.2), Vector3f(0, 1, 0));
+
+	pCamera = new Camera(WINDOW_WIDTH, WINDOW_HEIGHT, Vector3f(0, -40, 50), Vector3f(0.5, -0.8, 0.2), Vector3f(0, 1, 0));
 	pTexture = new Texture(0,"test.png");
 
 	shadowMapFBO.Init(WINDOW_WIDTH, WINDOW_HEIGHT);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);//!不bind不行！
-
-	/*unsigned int Indices[] = { 0, 3, 1,
-							1, 3, 2,
-							2, 3, 0,
-							1, 2, 0 };
-
-	length2 = CreateIndexBuffer(&IBO, Indices, sizeof(Indices));
-	length = CreateVertexBuffer(&VBO, Indices, 12);*/
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	Vertex Vertices[4] = { Vertex(Vector3f(0.0f, 0.0f, 0.0f), Vector2f(0.0f, 0.0f),Vector3f(0.0f,1.0f,0.0f)),
 							   Vertex(Vector3f(0.0f, 0.0f, 1.0f), Vector2f(0.0f, 1.0f),Vector3f(0.0f,1.0f,0.0f)),
@@ -414,53 +400,29 @@ int main(int argc, char** argv)
 	std::string testpic("test.png");
 	pGeo->AddTexure(0, testpic);
 
-	Vertex Vertices2[4] = { Vertex(Vector3f(0.0f, 0.0f, 0.0f), Vector2f(0.0f, 0.0f),Vector3f(0.0f,1.0f,0.0f)),
-							   Vertex(Vector3f(0.0f, 1.0f, 1.0f), Vector2f(0.0f, 1.0f),Vector3f(0.0f,1.0f,0.0f)),
-							   Vertex(Vector3f(1.0f, 0.0f, 0.0f), Vector2f(1.0f, 0.0f),Vector3f(0.0f,1.0f,0.0f)),
-							   Vertex(Vector3f(1.0f, -1.0f, 1.0f), Vector2f(1.0f, 1.0f),Vector3f(0.0f,1.0f,0.0f)) };
-	unsigned int Indices2[] = { 0, 3, 1,
-							1, 3, 2};
-	std::vector<Vertex> verts2(4);
-	for (int i = 0; i < 4; i++)
-	{
-		verts[i] = Vertices[i];
-	}
-	std::vector<unsigned int> indices2(6);
-	for (int i = 0; i < 6; i++)
-	{
-		indices[i] = Indices[i];
-	}
-
-	pGeo2 = new Geometry(1, 1);
-	//pGeo2->AddMeshEntry(verts2, indices2, 0);
-	pGeo2->AddMeshEntry(verts2, indices2, 0);
-	std::string testpic2("Content/test3.png");
-	pGeo2->AddTexure(3, testpic2);
-
-	/*pMesh = new Mesh();
-	pMesh->LoadMesh("Content/phoenix_ugv.md2");
-
-	pMesh2 = new Mesh();
-	pMesh2->LoadMesh("Content/phoenix_ugv.md2");*/
-
-	player = new Player(Vector3f(0.1, 0.1, 0.1), Vector3f(0, 0, 0), Vector3f(25, 0, 25), 100, 20, 5, 5);
+	player = new Player(Vector3f(0.1, 0.1, 0.1), Vector3f(0, 0, 0), Vector3f(25, 0, 25), 100, 1.5, 5);
 	player->SetMesh("Content/phoenix_ugv.md2");
 
-	enemy = new Enemy(Vector3f(0.1, 0.1, 0.1), Vector3f(0, 0, 0), Vector3f(10, 0, 10), 50, 10, 3, 3);
+	Enemy* enemy = new Enemy(Vector3f(0.1, 0.1, 0.1), Vector3f(0, 0, 0), Vector3f(10, 0, 10), 50, 1, 3);
 	enemy->SetMesh("Content/phoenix_ugv.md2");
-
-	enemy2 = new Enemy(Vector3f(0.1, 0.1, 0.1), Vector3f(0, 0, 0), Vector3f(30, 7, 12), 50, 10, 3, 3);
+	EnemyAI* enemyAI = new EnemyAI(player, enemy);
+	Enemy* enemy2 = new Enemy(Vector3f(0.1, 0.1, 0.1), Vector3f(0, 0, 0), Vector3f(30, 0, 12), 50, 1, 3);
 	enemy2->SetMesh(enemy->GetMesh());
+	EnemyAI* enemyAI2 = new EnemyAI(player, enemy2);
+	Enemy* enemy3 = new Enemy(Vector3f(0.1, 0.1, 0.1), Vector3f(0, 20, 0), Vector3f(40, 0, 43), 50, 1, 3);
+	enemy3->SetMesh(enemy->GetMesh());
+	EnemyAI* enemyAI3 = new EnemyAI(player, enemy3);
+	Enemy* enemy4 = new Enemy(Vector3f(0.1, 0.1, 0.1), Vector3f(0, 30, 0), Vector3f(45, 0, 19), 50, 1, 3);
+	enemy4->SetMesh(enemy->GetMesh());
+	EnemyAI* enemyAI4 = new EnemyAI(player, enemy4);
 
-	bullet = new Bullet(Vector3f(2,2,2),Vector3f(0,90,0),Vector3f(15,2,15),0.5);
-	bullet->Init();
+	enemies.emplace_back(std::make_pair(enemy,enemyAI));
+	enemies.emplace_back(std::make_pair(enemy2, enemyAI2));
+	enemies.emplace_back(std::make_pair(enemy3, enemyAI3));
+	enemies.emplace_back(std::make_pair(enemy4, enemyAI4));
 
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-	//length=CreateVertexBuffer(&VBO);
-	//length2 = CreateIndexBuffer(&IBO);
-	
-	//std::cout << "length2" << length2 << std::endl;
 	CompileLightShader();
 	//CompileShadowShader();
 
@@ -468,14 +430,12 @@ int main(int argc, char** argv)
 	gPersProjInfo.Height = WINDOW_HEIGHT;
 	gPersProjInfo.Width = WINDOW_WIDTH;
 	gPersProjInfo.zNear = 1.0f;
-	gPersProjInfo.zFar = 100.0f;
+	gPersProjInfo.zFar = 500.0f;
 
 	//初始化透视投影矩阵
 	m_ProjTransformation.InitPersProjTransform(gPersProjInfo);
 
 	glutMainLoop();
-
-	delete player;
 
 	return 0;
 }

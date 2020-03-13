@@ -114,6 +114,12 @@ Quaternion operator*(const Quaternion& q, const Vector3f& v)
 	return Quaternion(x,y,z,w);
 }
 
+float Distance(Vector3f a, Vector3f b)
+{
+	float ret = (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) + (a.z - b.z) * (a.z - b.z);
+	return sqrt(ret);
+}
+
 float Matrix4f::Determinant() const
 {
 	return m[0][0] * m[1][1] * m[2][2] * m[3][3] - m[0][0] * m[1][1] * m[2][3] * m[3][2] + m[0][0] * m[1][2] * m[2][3] * m[3][1] - m[0][0] * m[1][2] * m[2][1] * m[3][3]

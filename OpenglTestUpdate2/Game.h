@@ -1,5 +1,5 @@
 /*
-对游戏中物体的封装
+对游戏中物体与物体涉及的游戏逻辑的封装
 */
 
 #pragma once
@@ -19,7 +19,7 @@ public:
 	RenderItem(Vector3f _scale,Vector3f _rotation, Vector3f _worldPos):
 		scale(_scale),rotation(_rotation),worldPos(_worldPos)
 	{}
-	void Init();
+	virtual ~RenderItem() {};
 	Vector3f GetPos() { return worldPos; }
 	Vector3f GetScale() { return scale; }
 	Vector3f GetRotation() { return rotation; }
@@ -38,41 +38,49 @@ public:
 	}
 };
 
-//架构需要修改
 class Bullet:public RenderItem
 {
 private:
 	std::shared_ptr<Geometry> geo;
 	float speed;	
+	float timer;
+	bool isPlayer;
 public:
-	Bullet(Vector3f _scale,Vector3f _rotation,Vector3f _pos,float _speed):RenderItem(_scale,_rotation,_pos),geo(nullptr),speed(_speed)
+	bool isEnd;
+public:
+	Bullet(Vector3f _scale,Vector3f _rotation,Vector3f _pos,float _speed,bool _isPlayer):
+		RenderItem(_scale,_rotation,_pos),geo(nullptr),speed(_speed),timer(0),isPlayer(_isPlayer), isEnd(false)
 	{}
 	~Bullet()
-	{}
+	{
+	}
 	void Init();
+	void SetGeo(std::shared_ptr<Geometry>& _geo)
+	{
+		geo = _geo;
+	}
 	std::shared_ptr<Geometry>& GetGeo()
 	{		
 		return geo;
 	}
 	void Move();
-	void Destroy();
+	void CheckHurt();
 };
 
 class Avatar:public RenderItem
 {
-private:	
+protected:	
 	int hp;
-	int attack;
 	float speed;
 	float angleSpeed;
 	std::shared_ptr<Mesh> pMesh;//多个avatar可能共用一个mesh
 public:
+	bool isDead;
+public:
 	Avatar() {}
-	Avatar(Vector3f _scale, Vector3f _rotation, Vector3f _worldPos, int _hp, int _attack, float _speed,float _angleSpeed):
-		 RenderItem(_scale,_rotation,_worldPos),hp(_hp), attack(_attack), speed(_speed),angleSpeed(_angleSpeed),pMesh(nullptr)
+	Avatar(Vector3f _scale, Vector3f _rotation, Vector3f _worldPos, int _hp, float _speed,float _angleSpeed):
+		 RenderItem(_scale,_rotation,_worldPos),hp(_hp), speed(_speed),angleSpeed(_angleSpeed),pMesh(nullptr),isDead(false)
 	{}
-	~Avatar()
-	{	}
 	Avatar(const Avatar& avatar) = delete;
 	Avatar& operator=(const Avatar& avtar) = delete;
 	
@@ -86,8 +94,8 @@ public:
 	{
 		pMesh = mesh;
 	}
-	virtual void TakeImage();
-	virtual void Shoot();
+	virtual void TakeHurt();
+	virtual void Shoot(std::vector<Bullet*>& bullets)=0;
 	virtual void MoveForward();
 	virtual void MoveBack();
 	virtual void TurnRight();
@@ -109,25 +117,30 @@ class Player :public Avatar
 private:
 	
 public:
-	Player(Vector3f _scale, Vector3f _rotation, Vector3f _worldPos,int _hp,int _attack,float _speed,float _angleSpeed):
-		Avatar(_scale,_rotation,_worldPos,_hp,_attack,_speed,_angleSpeed)
+	Player(Vector3f _scale, Vector3f _rotation, Vector3f _worldPos,int _hp,float _speed,float _angleSpeed):
+		Avatar(_scale,_rotation,_worldPos,_hp,_speed,_angleSpeed)
 	{}
 	Player(const Player& player) = delete;
 	Player& operator=(const Player& player) = delete;
 	virtual void Update();
+	virtual void Shoot(std::vector<Bullet*>& bullets);
+	virtual void TakeHurt();
+	void TakeAction(char c,std::vector<Bullet*>& bullets);
 };
 
 class Enemy :public Avatar
 {
 private:
-	int hp;
-	int attack;
-	float speed;
+
 public:
-	Enemy(Vector3f _scale, Vector3f _rotation, Vector3f _worldPos, int _hp, int _attack, float _speed,float _angleSpeed) :
-		Avatar(_scale, _rotation, _worldPos, _hp, _attack, _speed,_angleSpeed)
+	Enemy(Vector3f _scale, Vector3f _rotation, Vector3f _worldPos, int _hp, float _speed,float _angleSpeed) :
+		Avatar(_scale,_rotation,_worldPos,_hp,_speed,_angleSpeed)
 	{}
 	Enemy(const Enemy& enemy) = delete;
 	Enemy& operator=(const Enemy& enemy) = delete;
 	virtual void Update();
+	virtual void Shoot(std::vector<Bullet*>& bullets);
+	virtual void TakeHurt();
 };
+
+void Destroy(RenderItem* item);

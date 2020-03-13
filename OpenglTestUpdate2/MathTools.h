@@ -270,8 +270,4 @@ struct Orientation
 	{}
 };
 
-class Pipeline
-{
-
-};
-
+float Distance(Vector3f a, Vector3f b);

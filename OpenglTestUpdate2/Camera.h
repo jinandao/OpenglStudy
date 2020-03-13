@@ -48,9 +48,16 @@ public:
 		return up;
 	}
 
-	void SetTarget(Vector3f& _target)
+	void SetTarget(const Vector3f& _target)
 	{
 		target = _target;
+	}
+
+	void SetPos(Vector3f _pos)
+	{
+		pos.x = _pos.x;
+		pos.y = _pos.y;
+		pos.z = _pos.z;
 	}
 
 	void OnMouse(int x, int y);

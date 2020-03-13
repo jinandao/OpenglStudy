@@ -1,13 +1,15 @@
 ﻿  main.cpp
 D:\OpenglStudy\OpenglTest2\OpenglTest\Camera.h(34,116): warning C4114:  多次使用同一类型限定符
-D:\OpenglStudy\OpenglTest2\OpenglTest\main.cpp(85,36): warning C4305:  “参数”: 从“double”到“float”截断
-D:\OpenglStudy\OpenglTest2\OpenglTest\main.cpp(89,36): warning C4305:  “参数”: 从“double”到“float”截断
-D:\OpenglStudy\OpenglTest2\OpenglTest\main.cpp(93,32): warning C4305:  “参数”: 从“double”到“float”截断
-D:\OpenglStudy\OpenglTest2\OpenglTest\main.cpp(99,39): warning C4305:  “=”: 从“double”到“float”截断
-D:\OpenglStudy\OpenglTest2\OpenglTest\main.cpp(104,35): warning C4305:  “=”: 从“double”到“float”截断
-D:\OpenglStudy\OpenglTest2\OpenglTest\main.cpp(105,35): warning C4305:  “=”: 从“double”到“float”截断
-D:\OpenglStudy\OpenglTest2\OpenglTest\main.cpp(379,97): warning C4305:  “参数”: 从“double”到“float”截断
-D:\OpenglStudy\OpenglTest2\OpenglTest\main.cpp(446,44): warning C4305:  “参数”: 从“double”到“float”截断
-D:\OpenglStudy\OpenglTest2\OpenglTest\main.cpp(449,42): warning C4305:  “参数”: 从“double”到“float”截断
-D:\OpenglStudy\OpenglTest2\OpenglTest\main.cpp(452,43): warning C4305:  “参数”: 从“double”到“float”截断
+D:\OpenglStudy\OpenglTest2\OpenglTest\main.cpp(80,36): warning C4305:  “参数”: 从“double”到“float”截断
+D:\OpenglStudy\OpenglTest2\OpenglTest\main.cpp(84,36): warning C4305:  “参数”: 从“double”到“float”截断
+D:\OpenglStudy\OpenglTest2\OpenglTest\main.cpp(88,34): warning C4305:  “参数”: 从“double”到“float”截断
+D:\OpenglStudy\OpenglTest2\OpenglTest\main.cpp(96,39): warning C4305:  “=”: 从“double”到“float”截断
+D:\OpenglStudy\OpenglTest2\OpenglTest\main.cpp(101,35): warning C4305:  “=”: 从“double”到“float”截断
+D:\OpenglStudy\OpenglTest2\OpenglTest\main.cpp(102,35): warning C4305:  “=”: 从“double”到“float”截断
+D:\OpenglStudy\OpenglTest2\OpenglTest\main.cpp(373,97): warning C4305:  “参数”: 从“double”到“float”截断
+D:\OpenglStudy\OpenglTest2\OpenglTest\main.cpp(403,44): warning C4305:  “参数”: 从“double”到“float”截断
+D:\OpenglStudy\OpenglTest2\OpenglTest\main.cpp(406,49): warning C4305:  “参数”: 从“double”到“float”截断
+D:\OpenglStudy\OpenglTest2\OpenglTest\main.cpp(409,50): warning C4305:  “参数”: 从“double”到“float”截断
+D:\OpenglStudy\OpenglTest2\OpenglTest\main.cpp(412,50): warning C4305:  “参数”: 从“double”到“float”截断
+D:\OpenglStudy\OpenglTest2\OpenglTest\main.cpp(415,50): warning C4305:  “参数”: 从“double”到“float”截断
   OpenglTest.vcxproj -> D:\OpenglStudy\OpenglTest2\Debug\OpenglTest.exe

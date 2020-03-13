@@ -3,18 +3,15 @@
 */
 
 #include "Game.h"
+#include "GameLogic.h"
 #include <iostream>
 
-void RenderItem::Init()
-{
-}
+extern Player* player;
+extern std::vector<std::pair<Enemy*, EnemyAI*>> enemies;
 
-void Avatar::TakeImage()
+void Avatar::TakeHurt()
 {
-}
-
-void Avatar::Shoot()
-{
+	hp -= 10;
 }
 
 void Avatar::MoveForward()
@@ -41,14 +38,93 @@ void Avatar::TurnLeft()
 
 void Avatar::Die()
 {
+	isDead = true;
 }
 
 void Player::Update()
 {
+
+}
+
+void Player::Shoot(std::vector<Bullet*>& bullets)
+{
+	Bullet* bullet = new Bullet(Vector3f(2, 2, 2), GetRotation(), GetPos(), 4, true);	
+	if (bullets.size()== 0)
+	{		
+		bullet->Init();
+	}
+	else
+	{
+		if (bullets[0] == nullptr)
+			bullet->Init();
+		else
+			bullet->SetGeo(bullets[0]->GetGeo());
+	}	
+	bullets.push_back(bullet);
+}
+
+void Player::TakeHurt()
+{
+	Avatar::TakeHurt();
+	if (hp <= 0)
+	{
+		Die();
+	}
+}
+
+void Player::TakeAction(char c,std::vector<Bullet*>& bullets)
+{
+	if (c == 'w')
+	{
+		MoveForward();
+	}
+	if (c == 's')
+	{
+		MoveBack();
+	}
+	if (c == 'a')
+	{
+		TurnLeft();
+	}
+	if (c == 'd')
+	{
+		TurnRight();
+	}
+	if (c == 'j')
+	{
+		Shoot(bullets);
+	}
 }
 
 void Enemy::Update()
 {
+
+}
+
+void Enemy::Shoot(std::vector<Bullet*>& bullets)
+{
+	Bullet* bullet = new Bullet(Vector3f(2, 2, 2), GetRotation(), GetPos(), 1, false);
+	if (bullets.size() == 0)
+	{
+		bullet->Init();
+	}
+	else
+	{
+		if (bullets[0] == nullptr)
+			bullet->Init();
+		else
+			bullet->SetGeo(bullets[0]->GetGeo());
+	}
+	bullets.push_back(bullet);
+}
+
+void Enemy::TakeHurt()
+{
+	Avatar::TakeHurt();
+	if (hp <= 0)
+	{		
+		Die();
+	}
 }
 
 void Bullet::Init()
@@ -79,11 +155,55 @@ void Bullet::Init()
 
 void Bullet::Move()
 {
-	float angle = rotation.y;
-	PositionChange(speed * cosf(ToRadian(angle + 90)), 0, speed * sinf(ToRadian(angle + 90)));
-	std::cout << "bullet move" << std::endl;
+	if (timer < 3)
+	{
+		timer += 0.01;
+		float angle = rotation.y;
+		PositionChange(speed * cosf(ToRadian(angle + 90)), 0, speed * sinf(ToRadian(angle + 90)));
+	}	
+	else
+	{
+		isEnd = true;
+	}
 }
 
-void Bullet::Destroy()
+void Bullet::CheckHurt()
 {
+	if(isPlayer)
+	{
+		for (auto ite = enemies.begin(); ite != enemies.end();)
+		{
+			if (Distance(ite->first->GetPos(), this->GetPos()) < 2)
+			{				
+				isEnd = true;
+				if (ite->first->isDead == false)
+				{
+					ite->first->TakeHurt();
+				}				
+				ite++;
+			}
+			else
+				ite++;
+		}
+	}
+	else
+	{
+		if (player != nullptr)
+		{
+			if (Distance(player->GetPos(), this->GetPos()) < 1)
+			{
+				isEnd = true;				
+				player->TakeHurt();
+			}
+		}		
+	}
+}
+
+void Destroy(RenderItem* item)
+{
+	if (item != nullptr)
+	{
+		delete item;
+		item = nullptr;
+	}	
 }
