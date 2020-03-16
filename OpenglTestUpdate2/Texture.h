@@ -3,7 +3,7 @@
 
 class Texture
 {
-private:
+public:
 	unsigned int rendererID;
 	std::string filePath;
 	unsigned char* localBuffer;

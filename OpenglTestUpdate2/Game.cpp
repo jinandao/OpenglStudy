@@ -48,7 +48,7 @@ void Player::Update()
 
 void Player::Shoot(std::vector<Bullet*>& bullets)
 {
-	Bullet* bullet = new Bullet(Vector3f(2, 2, 2), GetRotation(), GetPos(), 4, true);	
+	Bullet* bullet = new Bullet(Vector3f(2, 2, 2), GetRotation(), GetPos(), 3, true);	
 	if (bullets.size()== 0)
 	{		
 		bullet->Init();
@@ -190,7 +190,7 @@ void Bullet::CheckHurt()
 	{
 		if (player != nullptr)
 		{
-			if (Distance(player->GetPos(), this->GetPos()) < 1)
+			if (Distance(player->GetPos(), this->GetPos()) < 2)
 			{
 				isEnd = true;				
 				player->TakeHurt();

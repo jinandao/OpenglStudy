@@ -11,6 +11,7 @@
 #include "shadow_map_fbo.h"
 #include "Game.h"
 #include "GameLogic.h"
+#include "Pipeline.h"
 
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
@@ -44,7 +45,8 @@ Matrix4f m_Vtransformation;
 Matrix4f m_ProjTransformation;
 
 DirectionalLight directionLight;
-PointLight pointLight;
+//PointLight pointLight;
+SpotLight spotLight;
 
 GLuint gSampler;
 GLuint gWVPLocation;
@@ -55,19 +57,21 @@ GLuint dirLightLocation_Ambient;
 GLuint dirLightLocation_Diffuse;
 GLuint dirLightLocation_Direction;
 
-GLuint pointLightLocation_Color;
-GLuint pointLightLocation_Ambient;
-GLuint pointLightLocation_Diffuse;
-GLuint pointLightLocation_Position;
-GLuint pointLightLocation_Constant;
-GLuint pointLightLocation_Linear;
-GLuint pointLightLocation_Exp;
+GLuint spotLightLocation_Color;
+GLuint spotLightLocation_Ambient;
+GLuint spotLightLocation_Diffuse;
+GLuint spotLightLocation_Position;
+GLuint spotLightLocation_Constant;
+GLuint spotLightLocation_Linear;
+GLuint spotLightLocation_Exp;
+GLuint spotLightLocation_Direction;
+GLuint spotLightLocation_Cutoff;
 
 GLuint gLightWVP;//灯光WVP矩阵
 GLuint gWorld;//物体世界矩阵
 GLuint gEyeWorldPos;//相机位置
-//GLuint gMatSpecularIntensity;
-//GLuint gSpecularPower;
+GLuint gMatSpecularIntensity;
+GLuint gSpecularPower;
 
 GLuint gShadowWVP;
 GLuint gShadowTex;
@@ -90,6 +94,8 @@ Vector3f quadScale(100, 0.1, 100);
 std::vector<Bullet*> bullets;
 std::vector<std::pair<Enemy*,EnemyAI*>> enemies;
 
+//Pipeline p;
+
 static void LightInit()
 {
 	directionLight.Color = COLOR_WHITE;
@@ -97,16 +103,24 @@ static void LightInit()
 	directionLight.DiffuseIntensity = 0.5;
 	directionLight.Direction = Vector3f(0.5, 0.5, 0.5);
 
-	pointLight.Color = COLOR_CYAN;
+	/*pointLight.Color = COLOR_CYAN;
 	pointLight.AmbientIntensity = 0.4;
 	pointLight.DiffuseIntensity = 0.3;
-	pointLight.Position = Vector3f(5, 8, 5);
+	pointLight.Position = Vector3f(5, 8, 5);*/
+
+	spotLight.Color = COLOR_CYAN;
+	spotLight.AmbientIntensity = 0.1;
+	spotLight.DiffuseIntensity = 0.8;
+	spotLight.Position = Vector3f(10, -17, 12);
+	spotLight.Attenuation.Linear = 0.01f;
+	spotLight.Direction = Vector3f(2.0f, -0.1f, 0.0f);
+	spotLight.Cutoff = 0.0f;
 
 	//阴影相机的位置
-	//pShadowCamera = new Camera(WINDOW_WIDTH, WINDOW_HEIGHT, pointLight.Position, directionLight.Direction, Vector3f(0.0, 1.0, 0.0));
+	pShadowCamera = new Camera(WINDOW_WIDTH, WINDOW_HEIGHT, spotLight.Position, spotLight.Direction, Vector3f(0.0, 1.0, 0.0));
 }
 
-static void GetParamsInLightShader(GLuint ShaderProgram)
+static void GetParamsInLightShader()
 {
 	GetParamsInShader(ShaderProgram, gSampler, "gSampler");
 	GetParamsInShader(ShaderProgram, gWVPLocation, "gWVP");
@@ -119,21 +133,25 @@ static void GetParamsInLightShader(GLuint ShaderProgram)
 	GetParamsInShader(ShaderProgram, dirLightLocation_Diffuse, "gDirectionalLight.Base.DiffuseIntensity");
 	GetParamsInShader(ShaderProgram, dirLightLocation_Direction, "gDirectionalLight.Direction");
 
-	GetParamsInShader(ShaderProgram, pointLightLocation_Color, "gPointLights.Base.Color");
-	GetParamsInShader(ShaderProgram, pointLightLocation_Ambient, "gPointLights.Base.AmbientIntensity");
-	GetParamsInShader(ShaderProgram, pointLightLocation_Diffuse, "gPointLights.Base.DiffuseIntensity");
-	GetParamsInShader(ShaderProgram, pointLightLocation_Position, "gPointLights.Position");
-	GetParamsInShader(ShaderProgram, pointLightLocation_Constant, "gPointLights.Atten.Constant");
-	GetParamsInShader(ShaderProgram, pointLightLocation_Linear, "gPointLights.Atten.Linear");
-	GetParamsInShader(ShaderProgram, pointLightLocation_Exp, "gPointLights.Atten.Exp");
+	GetParamsInShader(ShaderProgram, spotLightLocation_Color, "gSpotLights.Base.Base.Color");
+	GetParamsInShader(ShaderProgram, spotLightLocation_Ambient, "gSpotLights.Base.Base.AmbientIntensity");
+	GetParamsInShader(ShaderProgram, spotLightLocation_Diffuse, "gSpotLights.Base.Base.DiffuseIntensity");
+	GetParamsInShader(ShaderProgram, spotLightLocation_Position, "gSpotLights.Base.Position");
+	GetParamsInShader(ShaderProgram, spotLightLocation_Constant, "gSpotLights.Base.Atten.Constant");
+	GetParamsInShader(ShaderProgram, spotLightLocation_Linear, "gSpotLights.Base.Atten.Linear");
+	GetParamsInShader(ShaderProgram, spotLightLocation_Exp, "gSpotLights.Base.Atten.Exp");
+	GetParamsInShader(ShaderProgram, spotLightLocation_Direction, "gSpotLights.Direction");
+	GetParamsInShader(ShaderProgram, spotLightLocation_Cutoff, "gSpotLights.Cutoff");
 
 	GetParamsInShader(ShaderProgram, gEyeWorldPos, "gEyeWorldPos");
+	GetParamsInShader(ShaderProgram, gMatSpecularIntensity, "gMatSpecularIntensity");
+	GetParamsInShader(ShaderProgram, gSpecularPower, "gSpecularPower");
 }
 
-static void GetParamsInShadowShader(GLuint ShaderProgram)
+static void GetParamsInShadowShader()
 {
-	gShadowWVP = glGetUniformLocation(ShadowShaderProgram, "gWVP");
-	gShadowTex = glGetUniformLocation(ShadowShaderProgram, "gShadowMap");
+	GetParamsInShader(ShadowShaderProgram, gShadowWVP, "gWVP");
+	GetParamsInShader(ShadowShaderProgram, gShadowTex, "gShadowMap");
 }
 
 static void SetLightsInShader()
@@ -145,60 +163,80 @@ static void SetLightsInShader()
 	glUniform3f(dirLightLocation_Direction, Direction.x, Direction.y, Direction.z);
 	glUniform1f(dirLightLocation_Diffuse, directionLight.DiffuseIntensity);
 
-	glUniform3f(pointLightLocation_Color, pointLight.Color.x, pointLight.Color.y, pointLight.Color.z);
-	glUniform1f(pointLightLocation_Ambient, pointLight.AmbientIntensity);
-	glUniform1f(pointLightLocation_Diffuse, pointLight.DiffuseIntensity);
-	glUniform3f(pointLightLocation_Position, pointLight.Position.x, pointLight.Position.y, pointLight.Position.z);
-	glUniform1f(pointLightLocation_Constant, pointLight.Attenuation.Constant);
-	glUniform1f(pointLightLocation_Linear, pointLight.Attenuation.Linear);
-	glUniform1f(pointLightLocation_Exp, pointLight.Attenuation.Exp);
+	glUniform3f(spotLightLocation_Color, spotLight.Color.x, spotLight.Color.y, spotLight.Color.z);
+	glUniform1f(spotLightLocation_Ambient, spotLight.AmbientIntensity);
+	glUniform1f(spotLightLocation_Diffuse, spotLight.DiffuseIntensity);
+	glUniform3f(spotLightLocation_Position, spotLight.Position.x, spotLight.Position.y, spotLight.Position.z);
+	glUniform1f(spotLightLocation_Constant, spotLight.Attenuation.Constant);
+	glUniform1f(spotLightLocation_Linear, spotLight.Attenuation.Linear);
+	glUniform1f(spotLightLocation_Exp, spotLight.Attenuation.Exp);
+	glUniform3f(spotLightLocation_Direction, spotLight.Direction.x, spotLight.Direction.y, spotLight.Direction.z);
+	glUniform1f(spotLightLocation_Cutoff, spotLight.Cutoff);
+
+	glUniform1f(gMatSpecularIntensity, 0.5);
+	glUniform1f(gSpecularPower, 0.5);
 }
 
-//static void ShadowMapPass()
-//{
-//	glUseProgram(ShadowShaderProgram);
-//
-//	shadowMapFBO.BindForWriting();
-//	glClear(GL_DEPTH_BUFFER_BIT);
-//
-//	//初始化透视投影矩阵
-//	m_ProjTransformation.InitPersProjTransform(gPersProjInfo);
-//
-//	//物体1
-//	//Vector3f pmesh1pos(-10.0f, 3.0f, 50.0f);
-//	pShadowCamera->SetTarget(pmesh1pos);
-//	//初始化相机相关矩阵
-//	Matrix4f shadowVtransformation = GetWMatrixForCamera(pShadowCamera->GetTarget(), pShadowCamera->GetUp(), pShadowCamera->GetPos());
-//	//初始化物体相关矩阵
-//	Matrix4f ScaleTrans, RotateTrans, TranslationTrans;
-//	m_Wtransformation = GetWMatrixForObject(Vector3f(0.2f, 0.2f, 0.2f), Vector3f(20, 20, 20), pmesh1pos);
-//	m_VPtransformation = m_ProjTransformation * shadowVtransformation;
-//	m_WVPtransformation = m_VPtransformation * m_Wtransformation;
-//
-//	glUniformMatrix4fv(gShadowWVP, 1, GL_TRUE, (const GLfloat*)m_WVPtransformation);
-//	pMesh->Render();
-//
-//	//物体2
-//	Vector3f pmesh2pos(1.0f, 5.5f, 4.0f);
-//	pShadowCamera->SetTarget(pmesh1pos);
-//	//初始化相机相关矩阵
-//	shadowVtransformation = GetWMatrixForCamera(pShadowCamera->GetTarget(), pShadowCamera->GetUp(), pShadowCamera->GetPos());
-//	//初始化物体相关矩阵	
-//	m_Wtransformation = GetWMatrixForObject(Vector3f(0.2f, 0.2f, 0.2f), Vector3f(20, 20, 20), pmesh2pos);
-//	m_VPtransformation = m_ProjTransformation * shadowVtransformation;
-//	m_WVPtransformation = m_VPtransformation * m_Wtransformation;
-//	glUniformMatrix4fv(gShadowWVP, 1, GL_TRUE, (const GLfloat*)m_WVPtransformation);
-//	pMesh->Render();
-//
-//	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-//}
+static void ShadowMapPass()
+{
+	glUseProgram(ShadowShaderProgram);
+
+	shadowMapFBO.BindForWriting();
+	
+	//glClear(GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	Matrix4f shadowVtransformation = GetWMatrixForCamera(pShadowCamera->GetTarget(), pShadowCamera->GetUp(), pShadowCamera->GetPos());
+
+	glUniformMatrix4fv(gShadowWVP, 1, GL_TRUE, (const GLfloat*)m_WVPtransformation);
+	//player->Render();
+
+	if (player != nullptr && player->isDead == false)
+	{		
+		m_Wtransformation = GetWMatrixForObject(player->GetScale(), player->GetRotation(), player->GetPos());
+		m_VPtransformation = m_ProjTransformation * shadowVtransformation;
+		m_WVPtransformation = m_VPtransformation * m_Wtransformation;
+		glUniformMatrix4fv(gShadowWVP, 1, GL_TRUE, (const GLfloat*)m_WVPtransformation);
+		
+		player->Render();
+	}
+
+	for (auto ite = enemies.begin(); ite != enemies.end();)
+	{
+		if (ite->first->isDead == false)
+		{			
+			m_Wtransformation = GetWMatrixForObject(ite->first->GetScale(), ite->first->GetRotation(), ite->first->GetPos());
+			m_VPtransformation = m_ProjTransformation * shadowVtransformation;
+			m_WVPtransformation = m_VPtransformation * m_Wtransformation;
+			glUniformMatrix4fv(gShadowWVP, 1, GL_TRUE, (const GLfloat*)m_WVPtransformation);
+
+			ite->first->Render();			
+		}
+		ite++;
+	}
+
+	for (auto ite = bullets.begin(); ite != bullets.end();)
+	{
+		if ((*ite)->isEnd == false)
+		{			
+			m_Wtransformation = GetWMatrixForObject((*ite)->GetScale(), (*ite)->GetRotation(), (*ite)->GetPos());
+			m_VPtransformation = m_ProjTransformation * shadowVtransformation;
+			m_WVPtransformation = m_VPtransformation * m_Wtransformation;
+			glUniformMatrix4fv(gShadowWVP, 1, GL_TRUE, (const GLfloat*)m_WVPtransformation);
+			(*ite)->GetGeo()->Render();			
+		}
+		ite++;
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
 
 static void RenderPass()
 {
 	glUseProgram(ShaderProgram);
 
-	glClear(GL_COLOR_BUFFER_BIT);
-
+	//glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//pCamera->OnRender();
 
 	SetLightsInShader();
@@ -207,50 +245,53 @@ static void RenderPass()
 	glUniform1i(gShadowMap,1);
 
 	glUniform3f(gEyeWorldPos, pCamera->GetPos().x, pCamera->GetPos().y, pCamera->GetPos().z);
-
 	shadowMapFBO.BindForReading(1);
+	
 
 	//初始化相机相关矩阵
 	if(player!=nullptr)
 		pCamera->SetTarget(player->GetPos()+Vector3f(0,-9,0));
 
-	m_Vtransformation = GetWMatrixForCamera(pCamera->GetTarget(),pCamera->GetUp(),pCamera->GetPos());
-
+	//初始化灯光相机相关矩阵	
 	Matrix4f shadow_Vtransformation, shadow_VP, shadow_WVP;
+	shadow_Vtransformation = GetWMatrixForCamera(pShadowCamera->GetTarget(), pShadowCamera->GetUp(), pShadowCamera->GetPos());
+	shadow_VP = m_ProjTransformation * shadow_Vtransformation;
 
-	//绘制物体3
+	m_Vtransformation = GetWMatrixForCamera(pCamera->GetTarget(),pCamera->GetUp(),pCamera->GetPos());	
+
+	//shadowMapFBO.BindForReading(0);
 	pTexture->Bind();
 	m_Wtransformation = GetWMatrixForObject(quadScale, quadRotate, quadPos);
+	m_VPtransformation = m_ProjTransformation * m_Vtransformation;
 	m_WVPtransformation = m_VPtransformation * m_Wtransformation;
+	shadow_WVP = shadow_VP * m_Wtransformation;
 	glUniformMatrix4fv(gWorld, 1, GL_TRUE, (const GLfloat*)m_Wtransformation);
 	glUniformMatrix4fv(gWVPLocation, 1, GL_TRUE, (const GLfloat*)m_WVPtransformation);
-
-	//为物体3调整灯光矩阵
-	//pShadowCamera->SetTarget(pmesh3pos);
-	//初始化灯光相机相关矩阵	
-	//shadow_Vtransformation = GetWMatrixForCamera(pShadowCamera->GetTarget(), pShadowCamera->GetUp(), pShadowCamera->GetPos());
-	//shadow_VP = m_ProjTransformation * shadow_Vtransformation;
-	//shadow_WVP = shadow_VP * m_Wtransformation;
-	//glUniformMatrix4fv(gLightWVP, 1, GL_TRUE, (const GLfloat*)shadow_WVP);
-	
-	//DrawCall(VBO, IBO, length2);
+	glUniformMatrix4fv(gLightWVP, 1, GL_TRUE, (const GLfloat*)shadow_WVP);
 	pGeo->Render();
 
 	//初始化物体1相关矩阵
 	if (player!=nullptr&&player->isDead==false)
 	{
+		/*p.SetCamera(*pCamera);
+		p.Scale(player->GetScale());
+		p.Rotate(player->GetRotation());
+		p.WorldPos(player->GetPos());
+		glUniformMatrix4fv(gWorld, 1, GL_TRUE, (const GLfloat*)p.GetWorldTrans());
+		glUniformMatrix4fv(gWVPLocation, 1, GL_TRUE, (const GLfloat*)p.GetWVPTrans());
+		p.SetCamera(*pShadowCamera);
+		glUniformMatrix4fv(gLightWVP, 1, GL_TRUE, (const GLfloat*)p.GetWVPTrans());
+		player->Render();*/
+
 		m_VPtransformation = m_ProjTransformation * m_Vtransformation;
 		Matrix4f m_Wtransformation = GetWMatrixForObject(player->GetScale(), player->GetRotation(), player->GetPos());
 		m_WVPtransformation = m_VPtransformation * m_Wtransformation;
+
 		glUniformMatrix4fv(gWorld, 1, GL_TRUE, (const GLfloat*)m_Wtransformation);
 		glUniformMatrix4fv(gWVPLocation, 1, GL_TRUE, (const GLfloat*)m_WVPtransformation);
-		//为物体1调整灯光矩阵
-		//pShadowCamera->SetTarget(pmesh1pos);
-		//初始化灯光相机相关矩阵	
-		//shadow_Vtransformation = GetWMatrixForCamera(pShadowCamera->GetTarget(), pShadowCamera->GetUp(), pShadowCamera->GetPos());
-		//shadow_VP = m_ProjTransformation * shadow_Vtransformation;
-		//shadow_WVP = shadow_VP * m_Wtransformation;
-		//glUniformMatrix4fv(gLightWVP, 1, GL_TRUE, (const GLfloat*)shadow_WVP);
+
+		shadow_WVP = shadow_VP * m_Wtransformation;
+		glUniformMatrix4fv(gLightWVP, 1, GL_TRUE, (const GLfloat*)shadow_WVP);
 		player->Render();
 	}
 	else if(player!=nullptr)
@@ -267,6 +308,10 @@ static void RenderPass()
 			m_WVPtransformation = m_VPtransformation * m_Wtransformation;
 			glUniformMatrix4fv(gWorld, 1, GL_TRUE, (const GLfloat*)m_Wtransformation);
 			glUniformMatrix4fv(gWVPLocation, 1, GL_TRUE, (const GLfloat*)m_WVPtransformation);
+
+			shadow_WVP = shadow_VP * m_Wtransformation;
+			glUniformMatrix4fv(gLightWVP, 1, GL_TRUE, (const GLfloat*)shadow_WVP);
+
 			ite->first->Render();
 			ite->second->Update(bullets);
 			ite++;
@@ -289,6 +334,10 @@ static void RenderPass()
 			m_WVPtransformation = m_VPtransformation * m_Wtransformation;
 			glUniformMatrix4fv(gWorld, 1, GL_TRUE, (const GLfloat*)m_Wtransformation);
 			glUniformMatrix4fv(gWVPLocation, 1, GL_TRUE, (const GLfloat*)m_WVPtransformation);
+
+			shadow_WVP = shadow_VP * m_Wtransformation;
+			glUniformMatrix4fv(gLightWVP, 1, GL_TRUE, (const GLfloat*)shadow_WVP);
+
 			(*ite)->GetGeo()->Render();
 			(*ite)->Move();
 			(*ite)->CheckHurt();
@@ -305,7 +354,7 @@ static void RenderPass()
 
 static void RenderSceneCB()
 {
-	//ShadowMapPass();
+	ShadowMapPass();
 	RenderPass();
 	glutSwapBuffers();
 }
@@ -318,16 +367,10 @@ static void PassiveMouseCB(int x, int y)
 static void KeyboardCB(unsigned char Key,int x,int y)
 {	
 	//std::cout << "Key:" << Key << std::endl;
+
 	if (player != nullptr)
 	{
 		player->TakeAction(Key, bullets);
-		if (Key == 'x')
-		{
-			std::cout << "pos: " << player->GetPos().x << " " << player->GetPos().y << " " << player->GetPos().z << std::endl;
-			std::cout << "rotate: " << player->GetRotation().x << " " << player->GetRotation().y << " " << player->GetRotation().z << std::endl;
-			std::cout << "camera pos: " << pCamera->GetPos().x << " " << pCamera->GetPos().y << " " << pCamera->GetPos().z << std::endl;
-			std::cout << "camera target: " << pCamera->GetTarget().x << " " << pCamera->GetTarget().y << " " << pCamera->GetTarget().z << std::endl;
-		}
 	}
 }
 
@@ -342,13 +385,13 @@ static void InitializeGlutCallbacks()
 static void CompileLightShader()
 {
 	CompileShader(ShaderProgram, pVSFileName, pFSFileName);
-	GetParamsInLightShader(ShaderProgram);
+	GetParamsInLightShader();
 }
 
 static void CompileShadowShader()
 {
 	CompileShader(ShadowShaderProgram, pShadowVSFileName, pShadowFSFileName);
-	GetParamsInShadowShader(ShadowShaderProgram);
+	GetParamsInShadowShader();
 }
 
 int main(int argc, char** argv)
@@ -371,9 +414,11 @@ int main(int argc, char** argv)
 	LightInit();
 
 	pCamera = new Camera(WINDOW_WIDTH, WINDOW_HEIGHT, Vector3f(0, -40, 50), Vector3f(0.5, -0.8, 0.2), Vector3f(0, 1, 0));
+	//pCamera = new Camera(WINDOW_WIDTH, WINDOW_HEIGHT, Vector3f(0, 0, 0), Vector3f(0, 0, 1), Vector3f(0, 1, 0));
 	pTexture = new Texture(0,"test.png");
 
 	shadowMapFBO.Init(WINDOW_WIDTH, WINDOW_HEIGHT);
+
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	Vertex Vertices[4] = { Vertex(Vector3f(0.0f, 0.0f, 0.0f), Vector2f(0.0f, 0.0f),Vector3f(0.0f,1.0f,0.0f)),
@@ -396,7 +441,7 @@ int main(int argc, char** argv)
 	}
 
 	pGeo=new Geometry(1,1);
-	pGeo->AddMeshEntry(verts, indices,0);
+	pGeo->AddMeshEntry(verts, indices,2);
 	std::string testpic("test.png");
 	pGeo->AddTexure(0, testpic);
 
@@ -424,7 +469,7 @@ int main(int argc, char** argv)
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
 	CompileLightShader();
-	//CompileShadowShader();
+	CompileShadowShader();
 
 	gPersProjInfo.FOV = 60.0f;
 	gPersProjInfo.Height = WINDOW_HEIGHT;
@@ -439,3 +484,4 @@ int main(int argc, char** argv)
 
 	return 0;
 }
+

@@ -3,7 +3,7 @@
 
 class ShadowMapFBO
 {
-private:
+public:
 	GLuint fbo;
 	GLuint shadowMap;
 
@@ -28,7 +28,7 @@ public:
 	}
 	void BindForReading(GLenum TextureUnit)
 	{
-		glActiveTexture(GL_TEXTURE1+TextureUnit);
+		glActiveTexture(GL_TEXTURE0+TextureUnit);
 		glBindTexture(GL_TEXTURE_2D, shadowMap);
 	}
 };

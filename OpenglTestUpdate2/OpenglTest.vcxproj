@@ -136,6 +136,7 @@
     <ClCompile Include="MathTools.cpp" />
     <ClCompile Include="mesh.cpp" />
     <ClCompile Include="OpenglTools.cpp" />
+    <ClCompile Include="Pipeline.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="shadow_map_fbo.cpp" />
     <ClCompile Include="Texture.cpp" />
@@ -192,6 +193,7 @@
     <ClInclude Include="MathTools.h" />
     <ClInclude Include="mesh.h" />
     <ClInclude Include="OpenglTools.h" />
+    <ClInclude Include="Pipeline.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="shadow_map_fbo.h" />
     <ClInclude Include="Texture.h" />

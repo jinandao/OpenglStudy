@@ -8,11 +8,12 @@ uniform mat4 gWVP;
 uniform mat4 gWorld;
 
 out vec2 TexCoord0;
-out vec3 Normal0;
+//out vec3 Normal0;
 
 void main()
 {
-    gl_Position = gWVP * vec4(Position, 1.0);
+    //gl_Position = gWVP * vec4(Position, 1.0);
+	gl_Position=vec4(Position.x*0.5,Position.y*0.5,Position.z*0.5,1.0);
     TexCoord0 = TexCoord;
-    Normal0 = (gWorld * vec4(Normal, 0.0)).xyz;
+    //Normal0 = (gWorld * vec4(Normal, 0.0)).xyz;
 }
