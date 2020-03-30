@@ -18,37 +18,61 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="OpenglTools.cpp">
+    <ClCompile Include="EngineLayer\Texture.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="MathTools.cpp">
+    <ClCompile Include="EngineLayer\cubemap_texture.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Shader.cpp">
+    <ClCompile Include="EngineLayer\mesh.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Texture.cpp">
+    <ClCompile Include="EngineLayer\MathTools.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Camera.cpp">
+    <ClCompile Include="EngineLayer\OpenglTools.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="mesh.cpp">
+    <ClCompile Include="GameLayer\Pipeline.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Lighting.cpp">
+    <ClCompile Include="GameLayer\Camera.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="shadow_map_fbo.cpp">
+    <ClCompile Include="GameLayer\skybox.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Game.cpp">
+    <ClCompile Include="GameLayer\Game.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="GameLogic.cpp">
+    <ClCompile Include="GameLayer\Lighting.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Pipeline.cpp">
+    <ClCompile Include="EngineLayer\Shader.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="EngineLayer\shadow_map_fbo.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="GameLogic\GameLogic.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="GameLayer\RenderItem.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="GameLayer\Avatar.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="GameLogic\Bullet.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="GameLogic\Player.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="GameLogic\Enemy.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="GameLogic\EnemyAI.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -68,25 +92,7 @@
     <ClInclude Include="Dependancies\GL\glfw3.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="OpenglTools.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="MathTools.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Shader.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="Dependancies\STB\stb_image.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Texture.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Camera.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="mesh.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Dependancies\GL\assimp\Compiler\poppack1.h">
@@ -203,19 +209,61 @@
     <ClInclude Include="Dependancies\GL\STB\stb_image.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Lighting.h">
+    <ClInclude Include="EngineLayer\Texture.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="shadow_map_fbo.h">
+    <ClInclude Include="EngineLayer\cubemap_texture.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Game.h">
+    <ClInclude Include="EngineLayer\mesh.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="GameLogic.h">
+    <ClInclude Include="EngineLayer\MathTools.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Pipeline.h">
+    <ClInclude Include="EngineLayer\OpenglTools.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="GameLayer\Pipeline.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="GameLayer\Camera.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="GameLayer\skybox.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="GameLayer\Game.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="GameLayer\Lighting.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="EngineLayer\Shader.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="EngineLayer\shadow_map_fbo.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="GameLogic\GameLogic.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="GameLayer\RenderItem.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="GameLayer\Avatar.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="GameLogic\Bullet.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="GameLogic\Player.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="GameLogic\Enemy.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="GameLogic\EnemyAI.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

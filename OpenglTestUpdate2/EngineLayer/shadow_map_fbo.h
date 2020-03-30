@@ -4,8 +4,18 @@
 class ShadowMapFBO
 {
 public:
+	/*enum GBUFFER_TEXTURE_TYPE
+	{
+		GBUFFER_TEXTURE_TYPE_POSITION,
+		GBUFFER_TEXTURE_TYPE_DIFFUSE,
+		GBUFFER_TEXTURE_TYPE_NORMAL,
+		GBUFFER_NUM_TEXTURES
+	};*/
+
+public:
 	GLuint fbo;
 	GLuint shadowMap;
+	//GLuint m_textures[GBUFFER_NUM_TEXTURES];
 
 public:
 	ShadowMapFBO() :fbo(0), shadowMap(0) {};
@@ -31,5 +41,9 @@ public:
 		glActiveTexture(GL_TEXTURE0+TextureUnit);
 		glBindTexture(GL_TEXTURE_2D, shadowMap);
 	}
+	/*void SetReadBuffer(GBUFFER_TEXTURE_TYPE TextureType)
+	{
+		glReadBuffer(GL_COLOR_ATTACHMENT0 + TextureType);
+	}*/
 };
 

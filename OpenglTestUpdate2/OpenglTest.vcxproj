@@ -128,21 +128,31 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="Game.cpp" />
-    <ClCompile Include="GameLogic.cpp" />
-    <ClCompile Include="Lighting.cpp" />
+    <ClCompile Include="GameLayer\Avatar.cpp" />
+    <ClCompile Include="GameLayer\Camera.cpp" />
+    <ClCompile Include="EngineLayer\cubemap_texture.cpp" />
+    <ClCompile Include="GameLayer\Game.cpp" />
+    <ClCompile Include="GameLayer\RenderItem.cpp" />
+    <ClCompile Include="GameLayer\skybox.cpp" />
+    <ClCompile Include="GameLogic\Bullet.cpp" />
+    <ClCompile Include="GameLogic\Enemy.cpp" />
+    <ClCompile Include="GameLogic\EnemyAI.cpp" />
+    <ClCompile Include="GameLogic\GameLogic.cpp" />
+    <ClCompile Include="GameLayer\Lighting.cpp" />
+    <ClCompile Include="GameLogic\Player.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="MathTools.cpp" />
-    <ClCompile Include="mesh.cpp" />
-    <ClCompile Include="OpenglTools.cpp" />
-    <ClCompile Include="Pipeline.cpp" />
-    <ClCompile Include="Shader.cpp" />
-    <ClCompile Include="shadow_map_fbo.cpp" />
-    <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="EngineLayer\MathTools.cpp" />
+    <ClCompile Include="EngineLayer\mesh.cpp" />
+    <ClCompile Include="EngineLayer\OpenglTools.cpp" />
+    <ClCompile Include="GameLayer\Pipeline.cpp" />
+    <ClCompile Include="EngineLayer\Shader.cpp" />
+    <ClCompile Include="EngineLayer\shadow_map_fbo.cpp" />
+    <ClCompile Include="EngineLayer\Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Camera.h" />
+    <ClInclude Include="GameLayer\Avatar.h" />
+    <ClInclude Include="GameLayer\Camera.h" />
+    <ClInclude Include="EngineLayer\cubemap_texture.h" />
     <ClInclude Include="Dependancies\GL\assimp\ai_assert.h" />
     <ClInclude Include="Dependancies\GL\assimp\anim.h" />
     <ClInclude Include="Dependancies\GL\assimp\camera.h" />
@@ -187,16 +197,22 @@
     <ClInclude Include="Dependancies\GL\glfw3.h" />
     <ClInclude Include="Dependancies\GL\STB\stb_image.h" />
     <ClInclude Include="Dependancies\STB\stb_image.h" />
-    <ClInclude Include="Game.h" />
-    <ClInclude Include="GameLogic.h" />
-    <ClInclude Include="Lighting.h" />
-    <ClInclude Include="MathTools.h" />
-    <ClInclude Include="mesh.h" />
-    <ClInclude Include="OpenglTools.h" />
-    <ClInclude Include="Pipeline.h" />
-    <ClInclude Include="Shader.h" />
-    <ClInclude Include="shadow_map_fbo.h" />
-    <ClInclude Include="Texture.h" />
+    <ClInclude Include="GameLayer\Game.h" />
+    <ClInclude Include="GameLayer\RenderItem.h" />
+    <ClInclude Include="GameLayer\skybox.h" />
+    <ClInclude Include="GameLogic\Bullet.h" />
+    <ClInclude Include="GameLogic\Enemy.h" />
+    <ClInclude Include="GameLogic\EnemyAI.h" />
+    <ClInclude Include="GameLogic\GameLogic.h" />
+    <ClInclude Include="GameLayer\Lighting.h" />
+    <ClInclude Include="EngineLayer\MathTools.h" />
+    <ClInclude Include="EngineLayer\mesh.h" />
+    <ClInclude Include="EngineLayer\OpenglTools.h" />
+    <ClInclude Include="GameLayer\Pipeline.h" />
+    <ClInclude Include="EngineLayer\Shader.h" />
+    <ClInclude Include="EngineLayer\shadow_map_fbo.h" />
+    <ClInclude Include="EngineLayer\Texture.h" />
+    <ClInclude Include="GameLogic\Player.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Dependancies\GL\assimp\.editorconfig" />

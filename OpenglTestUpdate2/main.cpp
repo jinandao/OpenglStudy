@@ -1,26 +1,35 @@
 #include <glew.h>
 #include <freeglut.h>
 #include <iostream>
-#include "OpenglTools.h"
-#include "Shader.h"
-#include "Texture.h"
-#include "Camera.h"
-#include "mesh.h"
-#include "Lighting.h"
-#include "MathTools.h"
-#include "shadow_map_fbo.h"
-#include "Game.h"
-#include "GameLogic.h"
-#include "Pipeline.h"
+#include "EngineLayer/OpenglTools.h"
+#include "EngineLayer/Shader.h"
+#include "EngineLayer/Texture.h"
+#include "GameLayer/Camera.h"
+#include "EngineLayer/mesh.h"
+#include "GameLayer/Lighting.h"
+#include "EngineLayer/MathTools.h"
+#include "EngineLayer/shadow_map_fbo.h"
+#include "GameLayer/Game.h"
+
+#include "GameLayer/Pipeline.h"
+#include "GameLayer/skybox.h"
+
+#include "GameLogic/Player.h"
+#include "GameLogic/Enemy.h"
+#include "GameLogic/EnemyAI.h"
+#include "GameLogic/Bullet.h"
 
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
 
-const char* pVSFileName = "lighting2.vs";
-const char* pFSFileName = "lighting2.fs";
+const char* pVSFileName = "Shaders/lighting2.vs";
+const char* pFSFileName = "Shaders/lighting2.fs";
 
-const char* pShadowVSFileName = "shadow_map.vs";
-const char* pShadowFSFileName = "shadow_map.fs";
+const char* pShadowVSFileName = "Shaders/shadow_map.vs";
+const char* pShadowFSFileName = "Shaders/shadow_map.fs";
+
+const char* skyboxVSShader = "Shaders/skybox.vs";
+const char* skyboxFSShader = "Shaders/skybox.fs";
 
 PersProjInfo gPersProjInfo;
 
@@ -31,6 +40,7 @@ Camera* pCamera = nullptr;
 
 Geometry* pGeo = nullptr;
 Geometry* pGeo2 = nullptr;
+Geometry* pGeotest = nullptr;
 
 Player* player = nullptr;
 
@@ -78,23 +88,20 @@ GLuint gShadowTex;
 
 GLuint ShaderProgram;
 GLuint ShadowShaderProgram;
+GLuint SkyboxShaderProgram;
 
-Vector3f pmesh1pos(25.0f, 0.0f, 25.0f);
-Vector3f pmesh1rotate(0.0f, 0.0f, 0.0f);
-Vector3f pmesh1scale(0.1, 0.1, 0.1);
-
-Vector3f pmesh2pos(5.0f, 0.0f, 15.0f);
-Vector3f pmesh2rotate(0.0f, 0.0f, 0.0f);
-Vector3f pmesh2scale(0.1, 0.1, 0.1);
+GLuint skyboxWVP;
+GLuint skyboxTex;
 
 Vector3f quadPos(0, 0, 0);
 Vector3f quadRotate(0, 0, 0);
-Vector3f quadScale(100, 0.1, 100);
+Vector3f quadScale(100, 0, 100);
 
 std::vector<Bullet*> bullets;
 std::vector<std::pair<Enemy*,EnemyAI*>> enemies;
 
-//Pipeline p;
+Pipeline p;
+SkyBox* skybox;
 
 static void LightInit()
 {
@@ -111,9 +118,9 @@ static void LightInit()
 	spotLight.Color = COLOR_CYAN;
 	spotLight.AmbientIntensity = 0.1;
 	spotLight.DiffuseIntensity = 0.8;
-	spotLight.Position = Vector3f(10, -17, 12);
+	spotLight.Position = Vector3f(5, 20, 5);
 	spotLight.Attenuation.Linear = 0.01f;
-	spotLight.Direction = Vector3f(2.0f, -0.1f, 0.0f);
+	spotLight.Direction = Vector3f(0.5f, -0.5f, 0);
 	spotLight.Cutoff = 0.0f;
 
 	//阴影相机的位置
@@ -154,6 +161,21 @@ static void GetParamsInShadowShader()
 	GetParamsInShader(ShadowShaderProgram, gShadowTex, "gShadowMap");
 }
 
+static void GetParamsInSkyboxShader()
+{
+	GetParamsInShader(SkyboxShaderProgram, skyboxWVP, "gWVP");
+	GetParamsInShader(SkyboxShaderProgram, skyboxTex, "gCubemapTexture");
+	if (skyboxWVP == 0xFFFFFFFF)
+	{
+		std::cout << "skyboxwvpnotfound" << std::endl;
+	}
+	if (skyboxTex == 0xFFFFFFFF)
+	{
+		std::cout << "skyboxtexnotfound" << std::endl;
+	}
+}
+
+
 static void SetLightsInShader()
 {
 	glUniform3f(dirLightLocation_Color, directionLight.Color.x, directionLight.Color.y, directionLight.Color.z);
@@ -184,19 +206,15 @@ static void ShadowMapPass()
 	shadowMapFBO.BindForWriting();
 	
 	//glClear(GL_DEPTH_BUFFER_BIT);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	Matrix4f shadowVtransformation = GetWMatrixForCamera(pShadowCamera->GetTarget(), pShadowCamera->GetUp(), pShadowCamera->GetPos());
-
-	glUniformMatrix4fv(gShadowWVP, 1, GL_TRUE, (const GLfloat*)m_WVPtransformation);
-	//player->Render();
-
+	p.SetCamera(*pShadowCamera);
 	if (player != nullptr && player->isDead == false)
-	{		
-		m_Wtransformation = GetWMatrixForObject(player->GetScale(), player->GetRotation(), player->GetPos());
-		m_VPtransformation = m_ProjTransformation * shadowVtransformation;
-		m_WVPtransformation = m_VPtransformation * m_Wtransformation;
-		glUniformMatrix4fv(gShadowWVP, 1, GL_TRUE, (const GLfloat*)m_WVPtransformation);
+	{				
+		p.Scale(player->GetScale());
+		p.WorldPos(player->GetPos());
+		p.Rotate(player->GetRotation());
+		glUniformMatrix4fv(gShadowWVP, 1, GL_TRUE, (const GLfloat*)p.GetWVPTrans());
 		
 		player->Render();
 	}
@@ -205,10 +223,11 @@ static void ShadowMapPass()
 	{
 		if (ite->first->isDead == false)
 		{			
-			m_Wtransformation = GetWMatrixForObject(ite->first->GetScale(), ite->first->GetRotation(), ite->first->GetPos());
-			m_VPtransformation = m_ProjTransformation * shadowVtransformation;
-			m_WVPtransformation = m_VPtransformation * m_Wtransformation;
-			glUniformMatrix4fv(gShadowWVP, 1, GL_TRUE, (const GLfloat*)m_WVPtransformation);
+			
+			p.Scale(ite->first->GetScale());
+			p.WorldPos(ite->first->GetPos());
+			p.Rotate(ite->first->GetRotation());
+			glUniformMatrix4fv(gShadowWVP, 1, GL_TRUE, (const GLfloat*)p.GetWVPTrans());
 
 			ite->first->Render();			
 		}
@@ -219,10 +238,11 @@ static void ShadowMapPass()
 	{
 		if ((*ite)->isEnd == false)
 		{			
-			m_Wtransformation = GetWMatrixForObject((*ite)->GetScale(), (*ite)->GetRotation(), (*ite)->GetPos());
-			m_VPtransformation = m_ProjTransformation * shadowVtransformation;
-			m_WVPtransformation = m_VPtransformation * m_Wtransformation;
-			glUniformMatrix4fv(gShadowWVP, 1, GL_TRUE, (const GLfloat*)m_WVPtransformation);
+			
+			p.Scale((*ite)->GetScale());
+			p.WorldPos((*ite)->GetPos());
+			p.Rotate((*ite)->GetRotation());
+			glUniformMatrix4fv(gShadowWVP, 1, GL_TRUE, (const GLfloat*)p.GetWVPTrans());
 			(*ite)->GetGeo()->Render();			
 		}
 		ite++;
@@ -233,88 +253,86 @@ static void ShadowMapPass()
 
 static void RenderPass()
 {
-	glUseProgram(ShaderProgram);
-
-	//glClear(GL_COLOR_BUFFER_BIT);
+	pCamera->OnRender();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	//pCamera->OnRender();
-
-	SetLightsInShader();
-
-	glUniform1i(gSampler, 0);
-	glUniform1i(gShadowMap,1);
-
-	glUniform3f(gEyeWorldPos, pCamera->GetPos().x, pCamera->GetPos().y, pCamera->GetPos().z);
-	shadowMapFBO.BindForReading(1);
+	p.SetCamera(*pCamera);
+	p.SetPerspectiveProj(gPersProjInfo);
 	
+	glUseProgram(SkyboxShaderProgram);
+	Pipeline p;
+	p.Scale(20.0f, 20.0f, 20.0f);
+	p.Rotate(0.0f, 0.0f, 0.0f);
+	p.WorldPos(pCamera->GetPos().x, pCamera->GetPos().y, pCamera->GetPos().z);
+	p.SetCamera(pCamera->GetPos(), pCamera->GetTarget(), pCamera->GetUp());
+	p.SetPerspectiveProj(gPersProjInfo);
+	glUniformMatrix4fv(skyboxWVP, 1, GL_TRUE, (const GLfloat*)p.GetWVPTrans());
+	glUniform1i(skyboxTex, 0);
+	skybox->Render();
 
-	//初始化相机相关矩阵
-	if(player!=nullptr)
-		pCamera->SetTarget(player->GetPos()+Vector3f(0,-9,0));
-
-	//初始化灯光相机相关矩阵	
-	Matrix4f shadow_Vtransformation, shadow_VP, shadow_WVP;
-	shadow_Vtransformation = GetWMatrixForCamera(pShadowCamera->GetTarget(), pShadowCamera->GetUp(), pShadowCamera->GetPos());
-	shadow_VP = m_ProjTransformation * shadow_Vtransformation;
-
-	m_Vtransformation = GetWMatrixForCamera(pCamera->GetTarget(),pCamera->GetUp(),pCamera->GetPos());	
-
-	//shadowMapFBO.BindForReading(0);
-	pTexture->Bind();
-	m_Wtransformation = GetWMatrixForObject(quadScale, quadRotate, quadPos);
-	m_VPtransformation = m_ProjTransformation * m_Vtransformation;
-	m_WVPtransformation = m_VPtransformation * m_Wtransformation;
-	shadow_WVP = shadow_VP * m_Wtransformation;
-	glUniformMatrix4fv(gWorld, 1, GL_TRUE, (const GLfloat*)m_Wtransformation);
-	glUniformMatrix4fv(gWVPLocation, 1, GL_TRUE, (const GLfloat*)m_WVPtransformation);
-	glUniformMatrix4fv(gLightWVP, 1, GL_TRUE, (const GLfloat*)shadow_WVP);
+	glUseProgram(ShadowShaderProgram);	
+	p.Scale(quadScale);
+	Vector3f test = quadPos + Vector3f(0, 17, 0);
+	p.WorldPos(test);
+	p.Rotate(quadRotate);
+	glUniformMatrix4fv(gShadowWVP, 1, GL_TRUE, (const GLfloat*)p.GetWVPTrans());
+	shadowMapFBO.BindForReading(0);
 	pGeo->Render();
 
-	//初始化物体1相关矩阵
-	if (player!=nullptr&&player->isDead==false)
+	glUseProgram(ShaderProgram);
+	SetLightsInShader();
+	glUniform1i(gSampler, 0);
+	glUniform1i(gShadowMap, 1);
+	shadowMapFBO.BindForReading(1);
+
+	p.Scale(quadScale);
+	p.WorldPos(quadPos);
+	p.Rotate(quadRotate);
+	glUniformMatrix4fv(gWorld, 1, GL_TRUE, (const GLfloat*)p.GetWorldTrans());
+	glUniformMatrix4fv(gWVPLocation, 1, GL_TRUE, (const GLfloat*)p.GetWVPTrans());
+	p.SetCamera(*pShadowCamera);
+	glUniformMatrix4fv(gLightWVP, 1, GL_TRUE, (const GLfloat*)p.GetWVPTrans());
+	pTexture->Bind();
+	//shadowMapFBO.BindForReading(0);
+	pGeo->Render();
+
+	p.SetCamera(*pCamera);
+	if (player != nullptr && player->isDead == false)
 	{
-		/*p.SetCamera(*pCamera);
 		p.Scale(player->GetScale());
-		p.Rotate(player->GetRotation());
 		p.WorldPos(player->GetPos());
+		p.Rotate(player->GetRotation());
+
 		glUniformMatrix4fv(gWorld, 1, GL_TRUE, (const GLfloat*)p.GetWorldTrans());
 		glUniformMatrix4fv(gWVPLocation, 1, GL_TRUE, (const GLfloat*)p.GetWVPTrans());
+
 		p.SetCamera(*pShadowCamera);
 		glUniformMatrix4fv(gLightWVP, 1, GL_TRUE, (const GLfloat*)p.GetWVPTrans());
-		player->Render();*/
-
-		m_VPtransformation = m_ProjTransformation * m_Vtransformation;
-		Matrix4f m_Wtransformation = GetWMatrixForObject(player->GetScale(), player->GetRotation(), player->GetPos());
-		m_WVPtransformation = m_VPtransformation * m_Wtransformation;
-
-		glUniformMatrix4fv(gWorld, 1, GL_TRUE, (const GLfloat*)m_Wtransformation);
-		glUniformMatrix4fv(gWVPLocation, 1, GL_TRUE, (const GLfloat*)m_WVPtransformation);
-
-		shadow_WVP = shadow_VP * m_Wtransformation;
-		glUniformMatrix4fv(gLightWVP, 1, GL_TRUE, (const GLfloat*)shadow_WVP);
 		player->Render();
+		p.SetCamera(*pCamera);
 	}
 	else if(player!=nullptr)
-	{		
+	{
 		delete player;
 		player = nullptr;
 	}
 
 	for (auto ite = enemies.begin(); ite != enemies.end();)
 	{
-		if(ite->first->isDead==false)
+		if (ite->first->isDead == false)
 		{
-			m_Wtransformation = GetWMatrixForObject(ite->first->GetScale(), ite->first->GetRotation(), ite->first->GetPos());
-			m_WVPtransformation = m_VPtransformation * m_Wtransformation;
-			glUniformMatrix4fv(gWorld, 1, GL_TRUE, (const GLfloat*)m_Wtransformation);
-			glUniformMatrix4fv(gWVPLocation, 1, GL_TRUE, (const GLfloat*)m_WVPtransformation);
-
-			shadow_WVP = shadow_VP * m_Wtransformation;
-			glUniformMatrix4fv(gLightWVP, 1, GL_TRUE, (const GLfloat*)shadow_WVP);
+			p.Scale(ite->first->GetScale());
+			p.WorldPos(ite->first->GetPos());
+			p.Rotate(ite->first->GetRotation());
+			glUniformMatrix4fv(gWorld, 1, GL_TRUE, (const GLfloat*)p.GetWorldTrans());
+			glUniformMatrix4fv(gWVPLocation, 1, GL_TRUE, (const GLfloat*)p.GetWVPTrans());
+			
+			p.SetCamera(*pShadowCamera);
+			glUniformMatrix4fv(gLightWVP, 1, GL_TRUE, (const GLfloat*)p.GetWVPTrans());
 
 			ite->first->Render();
 			ite->second->Update(bullets);
 			ite++;
+			p.SetCamera(*pCamera);
 		}
 		else
 		{
@@ -326,22 +344,28 @@ static void RenderPass()
 		}
 	}
 
-	for (auto ite=bullets.begin();ite!=bullets.end();)
-	{		
-		if ((*ite)->isEnd==false)
+	for (auto ite = bullets.begin(); ite != bullets.end();)
+	{
+		if ((*ite)->isEnd == false)
 		{
 			m_Wtransformation = GetWMatrixForObject((*ite)->GetScale(), (*ite)->GetRotation(), (*ite)->GetPos());
 			m_WVPtransformation = m_VPtransformation * m_Wtransformation;
-			glUniformMatrix4fv(gWorld, 1, GL_TRUE, (const GLfloat*)m_Wtransformation);
-			glUniformMatrix4fv(gWVPLocation, 1, GL_TRUE, (const GLfloat*)m_WVPtransformation);
-
-			shadow_WVP = shadow_VP * m_Wtransformation;
-			glUniformMatrix4fv(gLightWVP, 1, GL_TRUE, (const GLfloat*)shadow_WVP);
+			
+			p.Scale((*ite)->GetScale());
+			p.WorldPos((*ite)->GetPos());
+			p.Rotate((*ite)->GetRotation());
+			glUniformMatrix4fv(gWorld, 1, GL_TRUE, (const GLfloat*)p.GetWorldTrans());
+			glUniformMatrix4fv(gWVPLocation, 1, GL_TRUE, (const GLfloat*)p.GetWVPTrans());
+			
+			p.SetCamera(*pShadowCamera);
+			glUniformMatrix4fv(gLightWVP, 1, GL_TRUE, (const GLfloat*)p.GetWVPTrans());
 
 			(*ite)->GetGeo()->Render();
 			(*ite)->Move();
 			(*ite)->CheckHurt();
 			ite++;
+
+			p.SetCamera(*pCamera);
 		}
 		else
 		{
@@ -356,12 +380,30 @@ static void RenderSceneCB()
 {
 	ShadowMapPass();
 	RenderPass();
+	
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//glUniform1i(gShadowMap,0);
+	//pCamera->OnRender();
+	//pCamera->SetPos(Vector3f(0, 0, 0));
+	//pCamera->SetTarget(Vector3f(0, 0, 1));
+	//p.SetCamera(*pCamera);
+	//p.SetPerspectiveProj(gPersProjInfo);
+	//p.Scale(Vector3f(5,5,5));
+	//p.WorldPos(Vector3f(-3,3,5));
+	//p.Rotate(Vector3f(90,0,0));
+	//glUniformMatrix4fv(gShadowWVP, 1, GL_TRUE, (const GLfloat*)p.GetWVPTrans());
+	////pTexture->Bind();	
+	//shadowMapFBO.BindForReading(0);
+	//pGeo->Render();
+	////pGeotest->Render();
+	////player->Render();
+
 	glutSwapBuffers();
 }
 
 static void PassiveMouseCB(int x, int y)
 {
-	//pCamera->OnMouse(x, y);
+	pCamera->OnMouse(x, y);
 }
 
 static void KeyboardCB(unsigned char Key,int x,int y)
@@ -372,6 +414,49 @@ static void KeyboardCB(unsigned char Key,int x,int y)
 	{
 		player->TakeAction(Key, bullets);
 	}
+	/*if (Key == 'z')
+	{
+		Vector3f temp = pCamera->GetPos();
+		temp.x += 0.1;
+		pCamera->SetPos(temp);
+	}
+	if (Key == 'x')
+	{
+		Vector3f temp = pCamera->GetPos();
+		temp.y += 0.1;
+		pCamera->SetPos(temp);
+	}
+	if (Key == 'c')
+	{
+		Vector3f temp = pCamera->GetPos();
+		temp.z += 0.1;
+		pCamera->SetPos(temp);
+	}
+	if (Key == 'v')
+	{
+		Vector3f temp = pCamera->GetPos();
+		temp.x -= 0.1;
+		pCamera->SetPos(temp);
+	}
+	if (Key == 'b')
+	{
+		Vector3f temp = pCamera->GetPos();
+		temp.y -= 0.1;
+		pCamera->SetPos(temp);
+	}
+	if (Key == 'n')
+	{
+		Vector3f temp = pCamera->GetPos();
+		temp.z -= 0.1;
+		pCamera->SetPos(temp);
+	}
+	if (Key == 'm')
+	{
+		Vector3f temp = pCamera->GetPos();
+		Vector3f temp2 = pCamera->GetTarget();
+		std::cout << "camera pos:" << temp.x<<" "<<temp.y<<" "<<temp.z<<std::endl;
+		std::cout << "camera target:" << temp2.x << " " << temp2.y << " " << temp2.z << std::endl;
+	}*/
 }
 
 static void InitializeGlutCallbacks()
@@ -384,14 +469,35 @@ static void InitializeGlutCallbacks()
 
 static void CompileLightShader()
 {
-	CompileShader(ShaderProgram, pVSFileName, pFSFileName);
+	//CompileShader(ShaderProgram, pVSFileName, pFSFileName);
+	Shader shader(pVSFileName, pFSFileName);
+	if (shader.Init())
+	{
+		ShaderProgram = shader.ShaderID();
+	}
+	
 	GetParamsInLightShader();
 }
 
 static void CompileShadowShader()
 {
-	CompileShader(ShadowShaderProgram, pShadowVSFileName, pShadowFSFileName);
+	//CompileShader(ShadowShaderProgram, pShadowVSFileName, pShadowFSFileName);
+	Shader shadowshader(pShadowVSFileName, pShadowFSFileName);
+	if (shadowshader.Init())
+	{
+		ShadowShaderProgram = shadowshader.ShaderID();
+	}
 	GetParamsInShadowShader();
+}
+
+static void CompileSkyboxShader()
+{
+	Shader skyboxShader(skyboxVSShader,skyboxFSShader);
+	if (skyboxShader.Init())
+	{
+		SkyboxShaderProgram = skyboxShader.ShaderID();
+	}
+	GetParamsInSkyboxShader();
 }
 
 int main(int argc, char** argv)
@@ -413,13 +519,34 @@ int main(int argc, char** argv)
 
 	LightInit();
 
-	pCamera = new Camera(WINDOW_WIDTH, WINDOW_HEIGHT, Vector3f(0, -40, 50), Vector3f(0.5, -0.8, 0.2), Vector3f(0, 1, 0));
-	//pCamera = new Camera(WINDOW_WIDTH, WINDOW_HEIGHT, Vector3f(0, 0, 0), Vector3f(0, 0, 1), Vector3f(0, 1, 0));
-	pTexture = new Texture(0,"test.png");
+	//pCamera = new Camera(WINDOW_WIDTH, WINDOW_HEIGHT, Vector3f(0, -40, 50), Vector3f(0.5, -0.8, 0.2), Vector3f(0, 1, 0));
+	pCamera = new Camera(WINDOW_WIDTH, WINDOW_HEIGHT, Vector3f(20, 30, -20), Vector3f(0, -0.3, 0.9), Vector3f(0, 1, 0));
+	pTexture = new Texture(0,"test.png");	
 
 	shadowMapFBO.Init(WINDOW_WIDTH, WINDOW_HEIGHT);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+	Vertex Verticestest[3] = { Vertex(Vector3f(-1.0f, -1.0f, 0.0f), Vector2f(0.0f, 0.0f),Vector3f(0.0f,1.0f,0.0f)),
+							 Vertex(Vector3f(1.0f, -1.0f, 1.0f), Vector2f(0.0f, 1.0f),Vector3f(0.0f,1.0f,0.0f)),
+							Vertex(Vector3f(0.0f, 1.0f, 0.0f), Vector2f(1.0f, 0.0f),Vector3f(0.0f,1.0f,0.0f)) };
+	unsigned int Indicestest[3] = { 0,1,2 };
+	std::vector<Vertex> vertstest(4);
+	for (int i = 0; i < 3; i++)
+	{
+		vertstest[i] = Verticestest[i];
+	}
+	std::vector<unsigned int> indicestest(3);
+	for (int i = 0; i < 3; i++)
+	{
+		indicestest[i] = Indicestest[i];
+	}
+	pGeotest = new Geometry(1, 1);
+	pGeotest->AddMeshEntry(vertstest, indicestest, 2);
+	std::string testpictest("test.png");
+	pGeotest->AddTexure(0, testpictest);
+
 
 	Vertex Vertices[4] = { Vertex(Vector3f(0.0f, 0.0f, 0.0f), Vector2f(0.0f, 0.0f),Vector3f(0.0f,1.0f,0.0f)),
 							   Vertex(Vector3f(0.0f, 0.0f, 1.0f), Vector2f(0.0f, 1.0f),Vector3f(0.0f,1.0f,0.0f)),
@@ -470,6 +597,7 @@ int main(int argc, char** argv)
 
 	CompileLightShader();
 	CompileShadowShader();
+	CompileSkyboxShader();
 
 	gPersProjInfo.FOV = 60.0f;
 	gPersProjInfo.Height = WINDOW_HEIGHT;
@@ -477,9 +605,18 @@ int main(int argc, char** argv)
 	gPersProjInfo.zNear = 1.0f;
 	gPersProjInfo.zFar = 500.0f;
 
+	skybox = new SkyBox(pCamera, gPersProjInfo);
+
+	skybox->Init("","Content/sp3right.jpg",
+		"Content/sp3left.jpg",
+		"Content/sp3top.jpg",
+		"Content/sp3bot.jpg",
+		"Content/sp3front.jpg",
+		"Content/sp3back.jpg");
+
 	//初始化透视投影矩阵
 	m_ProjTransformation.InitPersProjTransform(gPersProjInfo);
-
+	
 	glutMainLoop();
 
 	return 0;

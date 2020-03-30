@@ -1,29 +1,31 @@
 #include "Shader.h"
 #include <iostream>
-#include "OpenglTools.h"
+#include "../EngineLayer/OpenglTools.h"
 
-void AddShader(GLuint ShaderProgram, Shader shader)
+void AddShader(GLuint ShaderProgram, std::string& shaderText, GLenum shaderType)
 {
-	GLuint ShaderObj = glCreateShader(shader.GetEnum());
+	GLuint ShaderObj = glCreateShader(shaderType);
 
 	if (ShaderObj == 0) {
-		std::cout << "Error creating shader type: " << shader.GetEnum() << std::endl;
+		std::cout << "Error creating shader type: " << shaderType << std::endl;
 		exit(0);
 	}
 
 	const GLchar* p[1];
-	char* test=new char[shader.GetShaderText().size()+1];
-	for (int i = 0; i < shader.GetShaderText().size(); i++)
+	//char* test=new char[shader.GetShaderText().size()+1];
+	char* test = new char[shaderText.size() + 1];
+	for (int i = 0; i < shaderText.size(); i++)
 	{
-		test[i] = shader.GetShaderText()[i];
+		test[i] = shaderText[i];
 	}
-	test[shader.GetShaderText().size()] = '\0';
+	test[shaderText.size()] = '\0';
 	p[0] = test;
 	
 	GLint Lengths[1];
-	Lengths[0] = strlen(shader.GetShaderText().c_str());
-	//std::cout <<"length0:"<< Lengths[0] << std::endl;
-	//std::cout <<"length1:"<< strlen(p[0]) << std::endl;
+	Lengths[0] = strlen(shaderText.c_str());
+	/*std::cout <<"test"<< test << std::endl;
+	std::cout <<"length0:"<< Lengths[0] << std::endl;
+	std::cout <<"length1:"<< strlen(p[0]) << std::endl;*/
 
 	glShaderSource(ShaderObj, 1, p, Lengths);
 	
@@ -33,13 +35,13 @@ void AddShader(GLuint ShaderProgram, Shader shader)
 	if (!success) {
 		GLchar InfoLog[1024];
 		glGetShaderInfoLog(ShaderObj, 1024, NULL, InfoLog);
-		std::cout << "Error compiling shader type: " << shader.GetEnum() <<" "<< InfoLog<< std::endl;
+		std::cout << "Error compiling shader type: " << shaderType <<" "<< InfoLog<< std::endl;
 		exit(1);
 	}
 	glAttachShader(ShaderProgram, ShaderObj);
 }
 
-void CompileShader(GLuint& shaderProgram, const char* vsFileName,const char* fsFileName)
+void CompileShader(GLuint& shaderProgram,const char* vsFileName,const char* fsFileName)
 {
 	shaderProgram = glCreateProgram();
 	if (shaderProgram == 0)
@@ -56,10 +58,9 @@ void CompileShader(GLuint& shaderProgram, const char* vsFileName,const char* fsF
 	{
 		exit(1);
 	}
-	Shader vsShader(vs, GL_VERTEX_SHADER);
-	Shader fsShader(fs, GL_FRAGMENT_SHADER);
-	AddShader(shaderProgram, vsShader);
-	AddShader(shaderProgram, fsShader);
+	
+	AddShader(shaderProgram, vs,GL_VERTEX_SHADER);
+	AddShader(shaderProgram, fs,GL_FRAGMENT_SHADER);
 	GLint Success = 0;
 	GLchar ErrorLog[1024] = { 0 };
 	glLinkProgram(shaderProgram);
@@ -76,4 +77,25 @@ void CompileShader(GLuint& shaderProgram, const char* vsFileName,const char* fsF
 		fprintf(stderr, "Invalid shader program: '%s'\n", ErrorLog);
 		exit(1);
 	}
+}
+
+Shader::~Shader()
+{
+	if (shaderID != 0)
+	{
+		glDeleteShader(shaderID);
+	}
+}
+
+bool Shader::Init()
+{
+	if (shaderID == 0)
+	{
+		CompileShader(shaderID, vsFileName.c_str(), psFileName.c_str());
+	}
+	if (shaderID != 0)
+	{
+		return true;
+	}
+	return false;
 }
