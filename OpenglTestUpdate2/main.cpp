@@ -13,6 +13,8 @@
 
 #include "GameLayer/Pipeline.h"
 #include "GameLayer/skybox.h"
+#include "GameLayer/UIElement.h"
+#include "GameLayer/Collider.h"
 
 #include "GameLogic/Player.h"
 #include "GameLogic/Enemy.h"
@@ -30,6 +32,9 @@ const char* pShadowFSFileName = "Shaders/shadow_map.fs";
 
 const char* skyboxVSShader = "Shaders/skybox.vs";
 const char* skyboxFSShader = "Shaders/skybox.fs";
+
+const char* uiVSShader = "Shaders/uishader.vs";
+const char* uiFSShader = "Shaders/uishader.fs";
 
 PersProjInfo gPersProjInfo;
 
@@ -86,9 +91,12 @@ GLuint gSpecularPower;
 GLuint gShadowWVP;
 GLuint gShadowTex;
 
-GLuint ShaderProgram;
-GLuint ShadowShaderProgram;
-GLuint SkyboxShaderProgram;
+GLuint uiTex;
+
+Shader* shaderProgram;
+Shader* shadowShaderProgram;
+Shader* skyboxShaderProgram;
+Shader* uiShaderProgram;
 
 GLuint skyboxWVP;
 GLuint skyboxTex;
@@ -99,9 +107,13 @@ Vector3f quadScale(100, 0, 100);
 
 std::vector<Bullet*> bullets;
 std::vector<std::pair<Enemy*,EnemyAI*>> enemies;
+std::vector<BoxCollider*> colliders;
 
 Pipeline p;
 SkyBox* skybox;
+UIElement* testUI;
+Button* btn;
+Button* btn2;
 
 static void LightInit()
 {
@@ -129,42 +141,44 @@ static void LightInit()
 
 static void GetParamsInLightShader()
 {
-	GetParamsInShader(ShaderProgram, gSampler, "gSampler");
-	GetParamsInShader(ShaderProgram, gWVPLocation, "gWVP");
-	GetParamsInShader(ShaderProgram, gWorld, "gWorld");
-	GetParamsInShader(ShaderProgram, gLightWVP, "gLightWVP");
-	GetParamsInShader(ShaderProgram, gShadowMap, "gShadowMap");
+	shaderProgram->Bind();
+	GetParamsInShader(shaderProgram->ShaderID(), gSampler, "gSampler");
+	GetParamsInShader(shaderProgram->ShaderID(), gWVPLocation, "gWVP");
+	GetParamsInShader(shaderProgram->ShaderID(), gWorld, "gWorld");
+	GetParamsInShader(shaderProgram->ShaderID(), gLightWVP, "gLightWVP");
+	GetParamsInShader(shaderProgram->ShaderID(), gShadowMap, "gShadowMap");
 
-	GetParamsInShader(ShaderProgram, dirLightLocation_Color, "gDirectionalLight.Base.Color");
-	GetParamsInShader(ShaderProgram, dirLightLocation_Ambient, "gDirectionalLight.Base.AmbientIntensity");
-	GetParamsInShader(ShaderProgram, dirLightLocation_Diffuse, "gDirectionalLight.Base.DiffuseIntensity");
-	GetParamsInShader(ShaderProgram, dirLightLocation_Direction, "gDirectionalLight.Direction");
+	GetParamsInShader(shaderProgram->ShaderID(), dirLightLocation_Color, "gDirectionalLight.Base.Color");
+	GetParamsInShader(shaderProgram->ShaderID(), dirLightLocation_Ambient, "gDirectionalLight.Base.AmbientIntensity");
+	GetParamsInShader(shaderProgram->ShaderID(), dirLightLocation_Diffuse, "gDirectionalLight.Base.DiffuseIntensity");
+	GetParamsInShader(shaderProgram->ShaderID(), dirLightLocation_Direction, "gDirectionalLight.Direction");
 
-	GetParamsInShader(ShaderProgram, spotLightLocation_Color, "gSpotLights.Base.Base.Color");
-	GetParamsInShader(ShaderProgram, spotLightLocation_Ambient, "gSpotLights.Base.Base.AmbientIntensity");
-	GetParamsInShader(ShaderProgram, spotLightLocation_Diffuse, "gSpotLights.Base.Base.DiffuseIntensity");
-	GetParamsInShader(ShaderProgram, spotLightLocation_Position, "gSpotLights.Base.Position");
-	GetParamsInShader(ShaderProgram, spotLightLocation_Constant, "gSpotLights.Base.Atten.Constant");
-	GetParamsInShader(ShaderProgram, spotLightLocation_Linear, "gSpotLights.Base.Atten.Linear");
-	GetParamsInShader(ShaderProgram, spotLightLocation_Exp, "gSpotLights.Base.Atten.Exp");
-	GetParamsInShader(ShaderProgram, spotLightLocation_Direction, "gSpotLights.Direction");
-	GetParamsInShader(ShaderProgram, spotLightLocation_Cutoff, "gSpotLights.Cutoff");
+	GetParamsInShader(shaderProgram->ShaderID(), spotLightLocation_Color, "gSpotLights.Base.Base.Color");
+	GetParamsInShader(shaderProgram->ShaderID(), spotLightLocation_Ambient, "gSpotLights.Base.Base.AmbientIntensity");
+	GetParamsInShader(shaderProgram->ShaderID(), spotLightLocation_Diffuse, "gSpotLights.Base.Base.DiffuseIntensity");
+	GetParamsInShader(shaderProgram->ShaderID(), spotLightLocation_Position, "gSpotLights.Base.Position");
+	GetParamsInShader(shaderProgram->ShaderID(), spotLightLocation_Constant, "gSpotLights.Base.Atten.Constant");
+	GetParamsInShader(shaderProgram->ShaderID(), spotLightLocation_Linear, "gSpotLights.Base.Atten.Linear");
+	GetParamsInShader(shaderProgram->ShaderID(), spotLightLocation_Exp, "gSpotLights.Base.Atten.Exp");
+	GetParamsInShader(shaderProgram->ShaderID(), spotLightLocation_Direction, "gSpotLights.Direction");
+	GetParamsInShader(shaderProgram->ShaderID(), spotLightLocation_Cutoff, "gSpotLights.Cutoff");
 
-	GetParamsInShader(ShaderProgram, gEyeWorldPos, "gEyeWorldPos");
-	GetParamsInShader(ShaderProgram, gMatSpecularIntensity, "gMatSpecularIntensity");
-	GetParamsInShader(ShaderProgram, gSpecularPower, "gSpecularPower");
+	GetParamsInShader(shaderProgram->ShaderID(), gEyeWorldPos, "gEyeWorldPos");
+	GetParamsInShader(shaderProgram->ShaderID(), gMatSpecularIntensity, "gMatSpecularIntensity");
+	GetParamsInShader(shaderProgram->ShaderID(), gSpecularPower, "gSpecularPower");
 }
 
 static void GetParamsInShadowShader()
 {
-	GetParamsInShader(ShadowShaderProgram, gShadowWVP, "gWVP");
-	GetParamsInShader(ShadowShaderProgram, gShadowTex, "gShadowMap");
+	GetParamsInShader(shadowShaderProgram->ShaderID(), gShadowWVP, "gWVP");
+	GetParamsInShader(shadowShaderProgram->ShaderID(), gShadowTex, "gShadowMap");
 }
 
 static void GetParamsInSkyboxShader()
 {
-	GetParamsInShader(SkyboxShaderProgram, skyboxWVP, "gWVP");
-	GetParamsInShader(SkyboxShaderProgram, skyboxTex, "gCubemapTexture");
+	skyboxShaderProgram->Bind();
+	GetParamsInShader(skyboxShaderProgram->ShaderID(), skyboxWVP, "gWVP");
+	GetParamsInShader(skyboxShaderProgram->ShaderID(), skyboxTex, "gCubemapTexture");
 	if (skyboxWVP == 0xFFFFFFFF)
 	{
 		std::cout << "skyboxwvpnotfound" << std::endl;
@@ -175,6 +189,15 @@ static void GetParamsInSkyboxShader()
 	}
 }
 
+static void GetParamsInUIShader()
+{
+	uiShaderProgram->Bind();
+	GetParamsInShader(uiShaderProgram->ShaderID(), uiTex, "gSampler");
+	if (uiTex == 0xFFFFFFFF)
+	{
+		std::cout << "uitexnotfound" << std::endl;
+	}	
+}
 
 static void SetLightsInShader()
 {
@@ -201,8 +224,8 @@ static void SetLightsInShader()
 
 static void ShadowMapPass()
 {
-	glUseProgram(ShadowShaderProgram);
-
+	//glUseProgram(ShadowShaderProgram);
+	shadowShaderProgram->Bind();
 	shadowMapFBO.BindForWriting();
 	
 	//glClear(GL_DEPTH_BUFFER_BIT);
@@ -258,7 +281,8 @@ static void RenderPass()
 	p.SetCamera(*pCamera);
 	p.SetPerspectiveProj(gPersProjInfo);
 	
-	glUseProgram(SkyboxShaderProgram);
+	//glUseProgram(SkyboxShaderProgram);
+	skyboxShaderProgram->Bind();
 	Pipeline p;
 	p.Scale(20.0f, 20.0f, 20.0f);
 	p.Rotate(0.0f, 0.0f, 0.0f);
@@ -269,7 +293,8 @@ static void RenderPass()
 	glUniform1i(skyboxTex, 0);
 	skybox->Render();
 
-	glUseProgram(ShadowShaderProgram);	
+	//glUseProgram(ShadowShaderProgram);	
+	shadowShaderProgram->Bind();
 	p.Scale(quadScale);
 	Vector3f test = quadPos + Vector3f(0, 17, 0);
 	p.WorldPos(test);
@@ -278,7 +303,8 @@ static void RenderPass()
 	shadowMapFBO.BindForReading(0);
 	pGeo->Render();
 
-	glUseProgram(ShaderProgram);
+	//glUseProgram(ShaderProgram);
+	shaderProgram->Bind();
 	SetLightsInShader();
 	glUniform1i(gSampler, 0);
 	glUniform1i(gShadowMap, 1);
@@ -374,6 +400,12 @@ static void RenderPass()
 			Destroy(toDel);
 		}
 	}
+
+	uiShaderProgram->Bind();
+	glUniform1i(uiTex, 0);
+	testUI->Render();
+	btn->Render();
+	btn2->Render();
 }
 
 static void RenderSceneCB()
@@ -404,6 +436,39 @@ static void RenderSceneCB()
 static void PassiveMouseCB(int x, int y)
 {
 	pCamera->OnMouse(x, y);
+}
+
+static void BtnFunc()
+{
+	std::cout << "按钮1被按下了！" << std::endl;
+}
+
+static void BtnFunc2()
+{
+	std::cout << "按钮2被按下了！" << std::endl;
+}
+
+static void MouseFuncTest(int button,int state,int x,int y)
+{
+	if (state == GLUT_DOWN)
+	{
+		if (button == GLUT_RIGHT_BUTTON)
+		{
+			//std::cout << "rightbuttondown: " << x << " " << y << std::endl;
+			float x1 = (x - WINDOW_WIDTH / 2.0) / (WINDOW_WIDTH*0.5);
+			float y1 = -(y - WINDOW_HEIGHT / 2.0) / (WINDOW_HEIGHT*0.5);
+			//std::cout << "rightbuttondown: " << x1 << " " << y1 << std::endl;
+		}
+		if (button == GLUT_LEFT_BUTTON)
+		{
+			//std::cout << "leftbuttondown: " << x << " " << y << std::endl;
+			float x1 = (x - WINDOW_WIDTH / 2.0) / (WINDOW_WIDTH*0.5);
+			float y1 = -(y - WINDOW_HEIGHT / 2.0) / (WINDOW_HEIGHT*0.5);
+			//std::cout << "leftbuttondown: " << x1 << " " << y1 << std::endl;
+			btn->IsClicked(x1, y1);
+			btn2->IsClicked(x1, y1);
+		}
+	}
 }
 
 static void KeyboardCB(unsigned char Key,int x,int y)
@@ -464,40 +529,40 @@ static void InitializeGlutCallbacks()
 	glutDisplayFunc(RenderSceneCB);
 	glutIdleFunc(RenderSceneCB);
 	glutPassiveMotionFunc(PassiveMouseCB);
+	glutMouseFunc(MouseFuncTest);
 	glutKeyboardFunc(KeyboardCB);
 }
 
 static void CompileLightShader()
 {
-	//CompileShader(ShaderProgram, pVSFileName, pFSFileName);
-	Shader shader(pVSFileName, pFSFileName);
-	if (shader.Init())
-	{
-		ShaderProgram = shader.ShaderID();
-	}
-	
+	shaderProgram = new Shader(pVSFileName, pFSFileName);
+	if (shaderProgram->Init())
+	{}	
 	GetParamsInLightShader();
 }
 
 static void CompileShadowShader()
-{
-	//CompileShader(ShadowShaderProgram, pShadowVSFileName, pShadowFSFileName);
-	Shader shadowshader(pShadowVSFileName, pShadowFSFileName);
-	if (shadowshader.Init())
-	{
-		ShadowShaderProgram = shadowshader.ShaderID();
-	}
+{	
+	shadowShaderProgram = new Shader(pShadowVSFileName, pShadowFSFileName);
+	if (shadowShaderProgram->Init())
+	{}
 	GetParamsInShadowShader();
 }
 
 static void CompileSkyboxShader()
 {
-	Shader skyboxShader(skyboxVSShader,skyboxFSShader);
-	if (skyboxShader.Init())
-	{
-		SkyboxShaderProgram = skyboxShader.ShaderID();
-	}
+	skyboxShaderProgram = new Shader(skyboxVSShader, skyboxFSShader);
+	if (skyboxShaderProgram->Init())
+	{}
 	GetParamsInSkyboxShader();
+}
+
+static void CompileUIShader()
+{
+	uiShaderProgram = new Shader(uiVSShader, uiFSShader);
+	if(uiShaderProgram->Init())
+	{}
+	GetParamsInUIShader();
 }
 
 int main(int argc, char** argv)
@@ -521,7 +586,7 @@ int main(int argc, char** argv)
 
 	//pCamera = new Camera(WINDOW_WIDTH, WINDOW_HEIGHT, Vector3f(0, -40, 50), Vector3f(0.5, -0.8, 0.2), Vector3f(0, 1, 0));
 	pCamera = new Camera(WINDOW_WIDTH, WINDOW_HEIGHT, Vector3f(20, 30, -20), Vector3f(0, -0.3, 0.9), Vector3f(0, 1, 0));
-	pTexture = new Texture(0,"test.png");	
+	pTexture = new Texture("test.png");	
 
 	shadowMapFBO.Init(WINDOW_WIDTH, WINDOW_HEIGHT);
 
@@ -545,7 +610,7 @@ int main(int argc, char** argv)
 	pGeotest = new Geometry(1, 1);
 	pGeotest->AddMeshEntry(vertstest, indicestest, 2);
 	std::string testpictest("test.png");
-	pGeotest->AddTexure(0, testpictest);
+	pGeotest->AddTexure(testpictest);
 
 
 	Vertex Vertices[4] = { Vertex(Vector3f(0.0f, 0.0f, 0.0f), Vector2f(0.0f, 0.0f),Vector3f(0.0f,1.0f,0.0f)),
@@ -570,7 +635,18 @@ int main(int argc, char** argv)
 	pGeo=new Geometry(1,1);
 	pGeo->AddMeshEntry(verts, indices,2);
 	std::string testpic("test.png");
-	pGeo->AddTexure(0, testpic);
+	pGeo->AddTexure(testpic);
+
+	testUI = new UIElement("Content/test.png", -0.7, -0.2, 0.5, 0.3);
+	testUI->Init();
+
+	btn = new Button("Content/button1.jpg", 0.3, 0.2, 0.3, 0.15);
+	//btn = new Button("Content/test2.jpg", -0.3, -0.4, 0.2, 0.1);
+	btn->Init();
+	btn->SetFunc(BtnFunc);
+	btn2 = new Button("Content/button2.jpg", -0.2, -0.4, 0.3, 0.15);
+	btn2->Init();
+	btn2->SetFunc(BtnFunc2);
 
 	player = new Player(Vector3f(0.1, 0.1, 0.1), Vector3f(0, 0, 0), Vector3f(25, 0, 25), 100, 1.5, 5);
 	player->SetMesh("Content/phoenix_ugv.md2");
@@ -593,11 +669,14 @@ int main(int argc, char** argv)
 	enemies.emplace_back(std::make_pair(enemy3, enemyAI3));
 	enemies.emplace_back(std::make_pair(enemy4, enemyAI4));
 
+	BoxCollider* testCollider = new BoxCollider(5, 0, 5, 1, 1, 1);
+
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
 	CompileLightShader();
 	CompileShadowShader();
 	CompileSkyboxShader();
+	CompileUIShader();
 
 	gPersProjInfo.FOV = 60.0f;
 	gPersProjInfo.Height = WINDOW_HEIGHT;
