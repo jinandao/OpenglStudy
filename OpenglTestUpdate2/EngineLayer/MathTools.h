@@ -4,6 +4,7 @@
 
 #pragma once
 #include <iostream>
+//#include <math.h>
 
 #define M_PI 3.1415926
 
@@ -271,3 +272,5 @@ struct Orientation
 };
 
 float Distance(Vector3f a, Vector3f b);
+
+float RandomFloat();

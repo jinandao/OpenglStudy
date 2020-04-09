@@ -2,8 +2,51 @@
 #include <iostream>
 #include "../EngineLayer/OpenglTools.h"
 
-void AddShader(GLuint ShaderProgram, std::string& shaderText, GLenum shaderType)
+ShaderProgram::ShaderProgram():shaderProgramID(0)
 {
+	shaderProgramID = glCreateProgram();
+
+	if (shaderProgramID == 0)
+	{
+		std::cout << "Error creating shader program\n" << std::endl;
+		exit(1);
+	}
+}
+
+ShaderProgram::~ShaderProgram()
+{
+	if (shaderProgramID != 0)
+	{
+		glDeleteShader(shaderProgramID);
+		shaderProgramID = 0;
+	}
+	/*for (auto ite = shaderObjList.begin(); ite != shaderObjList.end(); ite++)
+	{
+		glDeleteShader(*ite);
+	}*/
+}
+
+//bool Shader::Init()
+//{
+//	if (shaderProgramID == 0)
+//	{
+//		CompileShader(shaderProgramID, vsFileName.c_str(), psFileName.c_str());
+//	}
+//	if (shaderProgramID != 0)
+//	{
+//		return true;
+//	}
+//	return false;
+//}
+
+void ShaderProgram::AddShader(std::string shaderFileName, GLenum shaderType)
+{
+	std::string shaderText;
+	if (!ReadFile(shaderFileName.c_str(), shaderText))
+	{
+		exit(1);
+	}
+
 	GLuint ShaderObj = glCreateShader(shaderType);
 
 	if (ShaderObj == 0) {
@@ -20,7 +63,7 @@ void AddShader(GLuint ShaderProgram, std::string& shaderText, GLenum shaderType)
 	}
 	test[shaderText.size()] = '\0';
 	p[0] = test;
-	
+
 	GLint Lengths[1];
 	Lengths[0] = strlen(shaderText.c_str());
 	/*std::cout <<"test"<< test << std::endl;
@@ -28,74 +71,59 @@ void AddShader(GLuint ShaderProgram, std::string& shaderText, GLenum shaderType)
 	std::cout <<"length1:"<< strlen(p[0]) << std::endl;*/
 
 	glShaderSource(ShaderObj, 1, p, Lengths);
-	
+
 	glCompileShader(ShaderObj);
 	GLint success;
 	glGetShaderiv(ShaderObj, GL_COMPILE_STATUS, &success);
 	if (!success) {
 		GLchar InfoLog[1024];
 		glGetShaderInfoLog(ShaderObj, 1024, NULL, InfoLog);
-		std::cout << "Error compiling shader type: " << shaderType <<" "<< InfoLog<< std::endl;
+		std::cout << "Error compiling shader type: " << shaderType << " " << InfoLog << std::endl;
 		exit(1);
 	}
-	glAttachShader(ShaderProgram, ShaderObj);
+	glAttachShader(shaderProgramID, ShaderObj);
+	shaderObjList.push_back(ShaderObj);
 }
 
-void CompileShader(GLuint& shaderProgram,const char* vsFileName,const char* fsFileName)
+bool ShaderProgram::Finalize()
 {
-	shaderProgram = glCreateProgram();
-	if (shaderProgram == 0)
-	{
-		std::cout << "Error creating shader program\n" << std::endl;
-		exit(1);
-	}
-	std::string vs, fs;
-	if (!ReadFile(vsFileName, vs))
-	{
-		exit(1);
-	}
-	if (!ReadFile(fsFileName, fs))
-	{
-		exit(1);
-	}
-	
-	AddShader(shaderProgram, vs,GL_VERTEX_SHADER);
-	AddShader(shaderProgram, fs,GL_FRAGMENT_SHADER);
 	GLint Success = 0;
 	GLchar ErrorLog[1024] = { 0 };
-	glLinkProgram(shaderProgram);
-	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &Success);
+	glLinkProgram(shaderProgramID);
+	glGetProgramiv(shaderProgramID, GL_LINK_STATUS, &Success);
 	if (Success == 0) {
-		glGetProgramInfoLog(shaderProgram, sizeof(ErrorLog), NULL, ErrorLog);
+		glGetProgramInfoLog(shaderProgramID, sizeof(ErrorLog), NULL, ErrorLog);
 		fprintf(stderr, "Error linking shader program: '%s'\n", ErrorLog);
 		exit(1);
 	}
-	glValidateProgram(shaderProgram);
-	glGetProgramiv(shaderProgram, GL_VALIDATE_STATUS, &Success);
+	glValidateProgram(shaderProgramID);
+	glGetProgramiv(shaderProgramID, GL_VALIDATE_STATUS, &Success);
 	if (!Success) {
-		glGetProgramInfoLog(shaderProgram, sizeof(ErrorLog), NULL, ErrorLog);
+		glGetProgramInfoLog(shaderProgramID, sizeof(ErrorLog), NULL, ErrorLog);
 		fprintf(stderr, "Invalid shader program: '%s'\n", ErrorLog);
 		exit(1);
 	}
+	for (auto ite = shaderObjList.begin(); ite != shaderObjList.end(); ite++)
+	{
+		glDeleteShader(*ite);
+	}
+	return true;
 }
 
-Shader::~Shader()
+GLint ShaderProgram::GetUniformLocation(const char* pUniformName)
 {
-	if (shaderID != 0)
-	{
-		glDeleteShader(shaderID);
+	GLuint Location = glGetUniformLocation(shaderProgramID, pUniformName);
+
+	if (Location == INVALID_UNIFORM_LOCATION) {
+		fprintf(stderr, "Warning! Unable to get the location of uniform '%s'\n", pUniformName);
 	}
+
+	return Location;
 }
 
-bool Shader::Init()
+GLint ShaderProgram::GetProgramParam(GLint param)
 {
-	if (shaderID == 0)
-	{
-		CompileShader(shaderID, vsFileName.c_str(), psFileName.c_str());
-	}
-	if (shaderID != 0)
-	{
-		return true;
-	}
-	return false;
+	GLint ret;
+	glGetProgramiv(shaderProgramID, param, &ret);
+	return GLint();
 }

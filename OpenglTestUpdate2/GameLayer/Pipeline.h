@@ -110,6 +110,13 @@ public:
 		m_rotateInfo = o.rotation;
 	}
 
+	void SetObjectInfo(const Vector3f& pos,const Vector3f& scale,const Vector3f& rotation)
+	{
+		Scale(scale);
+		WorldPos(pos);
+		Rotate(rotation);
+	}
+
 	const Matrix4f& GetWPTrans();
 	const Matrix4f& GetWVTrans();
 	const Matrix4f& GetVPTrans();

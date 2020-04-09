@@ -3,27 +3,35 @@
 #include <freeglut.h>
 #include <string>
 #include <iostream>
+#include <list>
 
-class Shader
+class ShaderProgram
 {
 private:
-	GLuint shaderID;
-	std::string vsFileName;
-	std::string psFileName;
+	GLuint shaderProgramID;
+	//std::string vsFileName;
+	//std::string psFileName;
+	std::list<GLuint> shaderObjList;
 	//std::string shaderText;
 
 public:
-	Shader(std::string _vsfileName,std::string _psfileName):vsFileName(_vsfileName),psFileName(_psfileName),shaderID(0)
-	{}
+	/*Shader(std::string _vsfileName,std::string _psfileName):vsFileName(_vsfileName),psFileName(_psfileName), shaderProgramID(0)
+	{}*/
+	ShaderProgram();
+	~ShaderProgram();
 	
-	~Shader();
-	bool Init();	
-	GLuint ShaderID()const { return shaderID; }
+	void AddShader(std::string shaderFileName, GLenum shaderType);
+	bool Finalize();
+	
+	GLuint ShaderID()const { return shaderProgramID; }
+	void Bind() { glUseProgram(shaderProgramID); }
+
+	GLint GetUniformLocation(const char* pUniformName);
+	GLint GetProgramParam(GLint param);
 };
 
-static void AddShader(GLuint ShaderProgram, std::string& shaderText, GLenum shaderType);
-
-static void CompileShader(GLuint& shaderProgram, const char* vsFileName, const char* fsFileName);
+//void AddShader(GLuint ShaderProgram, std::string& shaderText, GLenum shaderType);
+//static void CompileShader(GLuint& shaderProgram, const char* vsFileName, const char* fsFileName);
 
 
 

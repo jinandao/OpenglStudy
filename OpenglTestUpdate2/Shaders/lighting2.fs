@@ -90,10 +90,10 @@ vec4 CalcLightInternal(BaseLight Light, vec3 LightDirection, vec3 Normal,
             SpecularColor = vec4(Light.Color, 1.0f) * gMatSpecularIntensity * SpecularFactor;                         
         }                                                                                   
     }                                                                                       
-    return vec4(ShadowFactor);       
+    //return vec4(ShadowFactor);       
 	//return AmbientColor;
 	//return SpecularColor*5;
-    //return (AmbientColor*5 + 10*ShadowFactor * (DiffuseColor + SpecularColor));                  
+    return (AmbientColor*5 + 10*ShadowFactor * (DiffuseColor + SpecularColor));                  
 }                                                                                           
                                                                                             
 vec4 CalcDirectionalLight(DirectionalLight light,vec3 Normal)                                                      
@@ -133,7 +133,7 @@ vec4 CalcSpotLight(SpotLight l, vec3 Normal, vec4 LightSpacePos)
 void main()                                                                                 
 {                                                                                           
     vec3 Normal = normalize(Normal0);                                                       
-    vec4 TotalLight1 = 0.1*CalcDirectionalLight(gDirectionalLight,Normal);  
+    vec4 TotalLight1 = 0.3*CalcDirectionalLight(gDirectionalLight,Normal);  
 	
 	//vec4 TotalLight=vec4(0,0,0,0);
 	

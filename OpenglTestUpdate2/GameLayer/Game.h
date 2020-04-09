@@ -140,6 +140,3 @@
 //	virtual void TakeHurt();
 //};
 
-class RenderItem;
-
-void Destroy(RenderItem* item);

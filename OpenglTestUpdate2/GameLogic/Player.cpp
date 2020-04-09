@@ -1,11 +1,6 @@
 #include "Player.h"
 #include "Bullet.h"
 
-void Player::Update()
-{
-
-}
-
 void Player::Shoot(std::vector<Bullet*>& bullets)
 {
 	Bullet* bullet = new Bullet(Vector3f(2, 2, 2), GetRotation(), GetPos(), 3, true);
@@ -54,4 +49,12 @@ void Player::TakeAction(char c, std::vector<Bullet*>& bullets)
 	{
 		Shoot(bullets);
 	}
+	if (c == 'k')
+	{
+
+	}
+}
+
+void Player::ShootBarriage()
+{
 }

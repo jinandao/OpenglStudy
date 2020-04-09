@@ -13,7 +13,7 @@ public:
 	int width, height, bPP;
 
 public:
-	Texture(unsigned int id, const std::string& path);
+	Texture(const std::string& path);
 	~Texture();
 
 	void Bind(unsigned int slot = 0) const;

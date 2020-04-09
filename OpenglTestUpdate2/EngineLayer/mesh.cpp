@@ -156,9 +156,9 @@ bool Mesh::InitMaterials(const aiScene* pScene, const std::string& Filename)
 			aiString Path;
 
 			if (pMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS) {				
-				std::string FullPath = "Content/test"+ std::to_string(meshNums)+".jpg";
-				//std::cout << meshNums << std::endl;
-				m_Textures[i] = new Texture(i+1, FullPath.c_str());
+				std::string FullPath = "Content/test1.jpg";//stb_image无法解析模型中的pcx格式图片，暂时使用该test图片代替
+				//std::string FullPath = Dir + "/" + Path.data;
+				m_Textures[i] = new Texture(FullPath.c_str());
 				/*if (!m_Textures[i]->Load()) {
 					printf("Error loading texture '%s'\n", FullPath.c_str());
 					delete m_Textures[i];
@@ -173,7 +173,7 @@ bool Mesh::InitMaterials(const aiScene* pScene, const std::string& Filename)
 
 		// Load a white texture in case the model does not include its own texture
 		if (!m_Textures[i]) {
-			m_Textures[i] = new Texture(i+1, "../Content/white.png");
+			m_Textures[i] = new Texture("Content/white.png");
 		}
 	}
 
@@ -198,11 +198,11 @@ void Geometry::AddMeshEntry(const std::vector<Vertex>& verts,const std::vector<u
 	}
 }
 
-void Geometry::AddTexure(int id,std::string& path)
+void Geometry::AddTexure(std::string& path)
 {
 	if (texNum < m_Textures.size())
 	{		
-		m_Textures[texNum] = new Texture(id, path);
+		m_Textures[texNum] = new Texture(path);
 		texNum += 1;
 	}
 }

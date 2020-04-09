@@ -2,6 +2,7 @@
 #include "RenderItem.h"
 
 class Bullet;
+class Pipeline;
 
 class Avatar :public RenderItem
 {
@@ -29,8 +30,8 @@ public:
 	virtual void TurnRight();
 	virtual void TurnLeft();
 	virtual void Die();
-	virtual void Update() = 0;
-	inline void Render();	
+	
+	void Render();
 	inline std::shared_ptr<Mesh>& GetMesh();
 };
 
@@ -43,11 +44,6 @@ inline void Avatar::SetMesh(const std::string& Filename)
 inline void Avatar::SetMesh(const std::shared_ptr<Mesh> mesh)
 {
 	pMesh = mesh;
-}
-
-inline void Avatar::Render()
-{
-	pMesh->Render();
 }
 
 inline std::shared_ptr<Mesh>& Avatar::GetMesh()

@@ -5,6 +5,7 @@
 
 extern Player* player;
 extern std::vector<std::pair<Enemy*, EnemyAI*>> enemies;
+extern Enemy* enemy3;
 
 void Bullet::Init()
 {
@@ -29,7 +30,7 @@ void Bullet::Init()
 	}
 	geo->AddMeshEntry(verts, indices, 0);
 	std::string testpic2("Content/test3.png");
-	geo->AddTexure(3, testpic2);
+	geo->AddTexure(testpic2);
 }
 
 void Bullet::Move()
@@ -63,6 +64,17 @@ void Bullet::CheckHurt()
 			}
 			else
 				ite++;
+		}
+		if (enemy3->isDead == false)
+		{
+			if (Distance(enemy3->GetPos(), this->GetPos()) < 2)
+			{
+				if (enemy3->isDead == false)
+				{
+					isEnd = true;
+					enemy3->TakeHurt();
+				}
+			}		
 		}
 	}
 	else

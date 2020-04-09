@@ -11,7 +11,8 @@ public:
 	{}
 	Enemy(const Enemy& enemy) = delete;
 	Enemy& operator=(const Enemy& enemy) = delete;
-	virtual void Update();
+	//virtual void Update();
 	virtual void Shoot(std::vector<Bullet*>& bullets);
 	virtual void TakeHurt();
+	virtual void Die();
 };

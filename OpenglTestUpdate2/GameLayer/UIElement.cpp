@@ -78,7 +78,6 @@ void UIElement::Render()
 
 bool Button::IsClicked(float x, float y)
 {
-	//std::cout << "btn click test: " << x << " " << vertexs[0].x << " " << y << " " << vertexs[0].y << std::endl;
 	if ((x > vertexs[0].x) && (x - vertexs[0].x < width) && (y > vertexs[0].y) && (y-vertexs[0].y < height))
 	{
 		if (buttonFunc != nullptr)

@@ -11,8 +11,9 @@ public:
 	{}
 	Player(const Player& player) = delete;
 	Player& operator=(const Player& player) = delete;
-	virtual void Update();
+	
 	virtual void Shoot(std::vector<Bullet*>& bullets);
 	virtual void TakeHurt();
 	void TakeAction(char c, std::vector<Bullet*>& bullets);
+	void ShootBarriage();
 };

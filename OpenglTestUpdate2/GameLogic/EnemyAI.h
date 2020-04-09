@@ -7,7 +7,7 @@ class Bullet;
 
 class EnemyAI
 {
-private:
+protected:
 	Avatar* player;
 	Enemy* self;
 	float timer;
@@ -17,5 +17,5 @@ public:
 	EnemyAI(Avatar* _player, Enemy* _self) :player(_player), self(_self), timer(0)
 	{}
 
-	void Update(std::vector<Bullet*>& bullets);
+	virtual void Update(std::vector<Bullet*>& bullets);
 };

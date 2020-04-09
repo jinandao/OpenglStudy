@@ -35,3 +35,5 @@ inline void RenderItem::RotationChange(float x, float y, float z)
 	rotation.y += y;
 	rotation.z += z;
 }
+
+void Destroy(RenderItem* item);

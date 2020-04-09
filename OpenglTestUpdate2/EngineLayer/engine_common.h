@@ -1,0 +1,18 @@
+#pragma once
+
+#define COLOR_TEXTURE_UNIT              GL_TEXTURE0
+#define COLOR_TEXTURE_UNIT_INDEX        0
+#define SHADOW_TEXTURE_UNIT             GL_TEXTURE1
+#define SHADOW_TEXTURE_UNIT_INDEX       1
+#define NORMAL_TEXTURE_UNIT             GL_TEXTURE2
+#define NORMAL_TEXTURE_UNIT_INDEX       2
+#define RANDOM_TEXTURE_UNIT             GL_TEXTURE3
+#define RANDOM_TEXTURE_UNIT_INDEX       3
+#define DISPLACEMENT_TEXTURE_UNIT       GL_TEXTURE4
+#define DISPLACEMENT_TEXTURE_UNIT_INDEX 4
+
+#define INVALID_UNIFORM_LOCATION 0xFFFFFFFF
+
+#define SNPRINTF _snprintf_s
+
+#define ARRAY_SIZE_IN_ELEMENTS(a) (sizeof(a)/sizeof(a[0]))

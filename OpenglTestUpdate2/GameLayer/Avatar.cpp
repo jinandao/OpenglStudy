@@ -1,4 +1,5 @@
 #include "Avatar.h"
+//#include "Pipeline.h"
 
 void Avatar::TakeHurt()
 {
@@ -30,4 +31,9 @@ void Avatar::TurnLeft()
 void Avatar::Die()
 {
 	isDead = true;
+}
+
+void Avatar::Render()
+{
+	pMesh->Render();
 }

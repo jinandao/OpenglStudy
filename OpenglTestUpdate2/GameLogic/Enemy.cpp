@@ -1,5 +1,8 @@
 #include "Enemy.h"
 #include "Bullet.h"
+#include "../GameLayer/ParticleSystem.h"
+
+extern std::vector<ParticleElement> particles;
 
 void Enemy::Shoot(std::vector<Bullet*>& bullets)
 {
@@ -27,4 +30,16 @@ void Enemy::TakeHurt()
 	}
 }
 
-void Enemy::Update(){}
+void Enemy::Die()
+{
+	//ParticleSystem* particle = new ParticleSystem();
+	ParticleElement pe;
+	pe.times = 180;
+	pe.pos = GetPos();
+	pe.ps = nullptr;
+	particles.push_back(pe);
+
+	Avatar::Die();
+}
+
+//void Enemy::Update(){}

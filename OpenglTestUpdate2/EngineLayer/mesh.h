@@ -34,7 +34,7 @@ protected:
 	std::vector<Texture*> m_Textures;
 
 public:	
-	void Render() const;
+	virtual void Render() const;
 };
 
 
@@ -52,7 +52,7 @@ public:
 	}
 	~Geometry();
 	void AddMeshEntry(const std::vector<Vertex>& verts,const std::vector<unsigned int>& indices,int matIndex);
-	void AddTexure(int id, std::string& path);
+	void AddTexure(std::string& path);
 };
 
 class Mesh:public DrawObject//需要从文件加载的复杂模型
@@ -71,6 +71,5 @@ public:
 	~Mesh();
 
 	bool LoadMesh(const std::string& Filename);
-
 };
 

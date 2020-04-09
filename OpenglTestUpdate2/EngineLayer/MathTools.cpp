@@ -3,7 +3,9 @@
 */
 
 #include "MathTools.h"
-#include <math.h>
+#include <cmath>
+#include <stdlib.h>
+#include <stdio.h>
 
 float ToRadian(float x)
 {
@@ -118,6 +120,12 @@ float Distance(Vector3f a, Vector3f b)
 {
 	float ret = (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) + (a.z - b.z) * (a.z - b.z);
 	return sqrt(ret);
+}
+
+float RandomFloat()
+{
+	float Max = RAND_MAX;
+	return ((float)rand()/Max);
 }
 
 float Matrix4f::Determinant() const
