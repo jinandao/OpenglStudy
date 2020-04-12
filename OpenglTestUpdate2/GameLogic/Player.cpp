@@ -1,5 +1,8 @@
 #include "Player.h"
 #include "Bullet.h"
+#include "BarrageShoot.h"
+
+//extern Barriage* barriage;
 
 void Player::Shoot(std::vector<Bullet*>& bullets)
 {
@@ -27,7 +30,7 @@ void Player::TakeHurt()
 	}
 }
 
-void Player::TakeAction(char c, std::vector<Bullet*>& bullets)
+void Player::TakeAction(char c, std::vector<Bullet*>& bullets,Barriage* barriage)
 {
 	if (c == 'w')
 	{
@@ -51,10 +54,11 @@ void Player::TakeAction(char c, std::vector<Bullet*>& bullets)
 	}
 	if (c == 'k')
 	{
-
+		barriage->Shoot(GetPos(), GetRotation());
 	}
 }
 
-void Player::ShootBarriage()
-{
-}
+//void Player::ShootBarriage(Barriage*& barriage)
+//{
+//	
+//}

@@ -10,12 +10,14 @@
 
 class Pipeline;
 class Avatar;
+class Enemy;
+class EnemyAI;
 
 class BarriageBullet
 {
 public:
 	static int BulletSpeed;
-	static bool CheckIsIn(Vector3f selfPos,Vector3f targetPos);
+	static bool CheckIsIn(Vector3f selfPos, std::vector<std::pair<Enemy*, EnemyAI*>>& enemies, Enemy*& boss);
 	static void TakeHurt(Avatar* avatar);
 	static void BulletMove(Vector3f& pos, const Vector3f rotate);
 };
@@ -28,8 +30,8 @@ private:
 	std::vector<Vector3f> bulletsPos;
 	std::vector<Vector3f> bulletRotations;
 	//std::vector<int> shouldRenders;
-	static int updateTimes;//可以在多少次循环中存在
-	static int intervalTimes;//需要间隔多少次循环才可以释放一次
+	int updateTimes;//可以在多少次循环中存在
+	int intervalTimes;//需要间隔多少次循环才可以释放一次
 	
 	int shouldRenders[NUM_INSTANCES];//哪些子弹应该被绘制，被碰撞的子弹，将该位置1，则不再绘制，否则置0，继续绘制
 	Matrix4f WVPMatrics[NUM_INSTANCES];
@@ -42,8 +44,7 @@ public:
 	~Barriage();
 	bool LoadBarriage(const std::string fileName);
 	InstancedMesh* GetMesh();
-	void Update(Pipeline p);
-	void BulletInitial(Vector3f pos, Vector3f rotate);
-	static void Shoot();
-	static bool isFired;
+	void Update(Pipeline p, std::vector<std::pair<Enemy*, EnemyAI*>>& enemies, Enemy*& boss);
+	void Shoot(Vector3f pos, Vector3f rotate);
+	bool isFired;
 };

@@ -3,9 +3,9 @@
 #include "Enemy.h"
 #include "EnemyAI.h"
 
-extern Player* player;
-extern std::vector<std::pair<Enemy*, EnemyAI*>> enemies;
-extern Enemy* enemy3;
+//extern Player* player;
+//extern std::vector<std::pair<Enemy*, EnemyAI*>> enemies;
+//extern Enemy* enemy3;
 
 void Bullet::Init()
 {
@@ -47,7 +47,7 @@ void Bullet::Move()
 	}
 }
 
-void Bullet::CheckHurt()
+void Bullet::CheckHurt(Player* &player, std::vector<std::pair<Enemy*, EnemyAI*>> &enemies, Enemy* &boss)
 {
 	if (isPlayer)
 	{
@@ -65,14 +65,14 @@ void Bullet::CheckHurt()
 			else
 				ite++;
 		}
-		if (enemy3->isDead == false)
+		if (boss->isDead == false)
 		{
-			if (Distance(enemy3->GetPos(), this->GetPos()) < 2)
+			if (Distance(boss->GetPos(), this->GetPos()) < 2)
 			{
-				if (enemy3->isDead == false)
+				if (boss->isDead == false)
 				{
 					isEnd = true;
-					enemy3->TakeHurt();
+					boss->TakeHurt();
 				}
 			}		
 		}

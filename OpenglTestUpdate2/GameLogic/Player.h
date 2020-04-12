@@ -1,5 +1,6 @@
 #pragma once
 #include "../GameLayer/Avatar.h"
+class Barriage;
 
 class Player :public Avatar
 {
@@ -14,6 +15,6 @@ public:
 	
 	virtual void Shoot(std::vector<Bullet*>& bullets);
 	virtual void TakeHurt();
-	void TakeAction(char c, std::vector<Bullet*>& bullets);
-	void ShootBarriage();
+	void TakeAction(char c, std::vector<Bullet*>& bullets, Barriage* barriage);
+	//void ShootBarriage(Barriage* &barriage);
 };

@@ -13,7 +13,6 @@ void ButtonFunctions::GameStartButton()
 
 void ButtonFunctions::GameEndButton()
 {
-	std::cout << "testendbutton" << std::endl;
 	exit(0);
 }
 

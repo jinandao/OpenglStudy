@@ -1,8 +1,10 @@
 #include "BossAI.h"
 #include "../GameLayer/Avatar.h"
 #include "Enemy.h"
+#include "Player.h"
 
 int temp = 0;
+extern Player* player;
 
 BossAI::BossAI(Avatar *player,Enemy* _boss):EnemyAI(player, _boss),isInboss(true), collideTimes(0), collideupdateTimes(40), normalupdateTimes(0)
 {}
@@ -15,6 +17,10 @@ void BossAI::Update(std::vector<Bullet*>& bullets)
 {
 	if (isInboss)
 	{
+		if (Distance(player->GetPos(),self->GetPos())<1.5)
+		{
+			player->TakeHurt();
+		}
 		if (collideTimes < 3)//冲撞次数小于3时，冲到某一点后转向，继续冲撞
 		{
 			if (!Collide())//到达某一点后，!collider为true

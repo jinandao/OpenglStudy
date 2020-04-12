@@ -1,16 +1,14 @@
 #include "GameState.h"
+#include <vector>
 #include "../GameLayer/UIElement.h"
 #include "../GameLayer/skybox.h"
-#include "../EngineLayer/Lighting.h"
 #include "../GameLayer/Camera.h"
 #include "../EngineLayer/Texture.h"
 #include "../GameLayer/ParticleSystem.h"
-#include "../EngineLayer/shadow_map_fbo.h"
 #include "../GameLogic/Player.h"
 #include "../GameLogic/Enemy.h"
 #include "../GameLogic/EnemyAI.h"
 #include "../GameLogic/BossAI.h"
-#include "../GameLayer/Pipeline.h"
 #include "../GameLogic/BarrageShoot.h"
 #include "../EngineLayer/uitechnique.h"
 #include "../EngineLayer/shadowTechnique.h"
@@ -18,60 +16,18 @@
 #include "../EngineLayer/skyboxtechnique.h"
 #include "../GameLogic/Bullet.h"
 #include "../EngineLayer/OpenglTools.h"
-#include <vector>
 #include "../EngineLayer/PSUpdateTechnique.h"
 #include "../EngineLayer/PSBillboardTechnique.h"
+#include "../GameLayer/UIElement.h"
+#include "../GameLogic/ButtonFunctions.h"
 
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
 
-extern SkyBox* skybox;
-extern UIElement* testUI;
-extern Button* btn;
-extern Button* btn2;
-extern Button* btn3;
-extern DirectionalLight directionLight;
-extern SpotLight spotLight;
-
-extern Geometry* pGeotest;
-extern Camera* pCamera;
-extern Texture* pTexture;
-extern ParticleSystem* pstest;
-extern ShadowMapFBO shadowMapFBO;
-extern PersProjInfo gPersProjInfo;
-
-extern Geometry* pGeo;
-extern Player* player;
-
-extern Enemy* enemy3;
-extern BossAI* bossAI;
-extern Barriage* barriage;
-
-extern Pipeline p;
-extern std::vector<std::pair<Enemy*, EnemyAI*>> enemies;
-extern Camera *pShadowCamera;
-
-extern UITechnique* uiTechnique;
-extern SkyBoxTechnique* skyboxTechnique;
-extern ShadowTechnique* shadowTechnique;
-extern LightingTechnique* lightingTechnique;
-extern std::vector<Bullet*> bullets;
-
 extern std::vector<ParticleElement> particles;
-
-extern UIElement* GameLabel;
-extern UIElement* GameWinLabel;
-extern UIElement* GameFailLabel;
-extern Button* StartButton;
-extern Button* RestartButton;
-extern Button* EndButton;
-
-Vector3f quadPos(0, 0, 0);
-Vector3f quadRotate(0, 0, 0);
-Vector3f quadScale(100, 0, 100);
-
-PSUpdateTechnique* ps;
-PSBillboardTechnique* pb;
+extern Button* startButton;
+extern Button* restartButton;
+extern Button* endButton;
 
 void GameStateFunc::BeginUpdate()
 {
@@ -79,8 +35,8 @@ void GameStateFunc::BeginUpdate()
 
 	uiTechnique->Enable();
 	uiTechnique->SetSampler(0);
-	GameLabel->Render();
-	StartButton->Render();
+	gameLabel->Render();
+	startButton->Render();
 }
 
 void GameStateFunc::PlayInitial()//资源初始化
@@ -90,15 +46,6 @@ void GameStateFunc::PlayInitial()//资源初始化
 	pb = new PSBillboardTechnique();
 
 	LightInit();
-	pCamera = new Camera(WINDOW_WIDTH, WINDOW_HEIGHT, Vector3f(20, 30, -20), Vector3f(0, -0.3, 0.9), Vector3f(0, 1, 0));
-	//pCamera = new Camera(WINDOW_WIDTH, WINDOW_HEIGHT);
-	pShadowCamera = new Camera(WINDOW_WIDTH, WINDOW_HEIGHT, spotLight.Position, spotLight.Direction, Vector3f(0.0, 1.0, 0.0));
-
-	pTexture = new Texture("test.png");
-
-	pstest = new ParticleSystem();
-	pstest->SetTechnique(ps, pb);
-	pstest->InitParticleSystem(Vector3f(30, 0, 40));
 
 	shadowMapFBO.Init(WINDOW_WIDTH, WINDOW_HEIGHT);
 
@@ -149,30 +96,18 @@ void GameStateFunc::PlayInitial()//资源初始化
 	std::string testpic("test.png");
 	pGeo->AddTexure(testpic);
 
-	//btn = new Button("Content/button1.jpg", 0.3, 0.2, 0.3, 0.15);
-	////btn = new Button("Content/test2.jpg", -0.3, -0.4, 0.2, 0.1);
-	//btn->Init();
-	//btn->SetFunc(BtnFunc);
-	//btn2 = new Button("Content/button2.jpg", -0.2, -0.4, 0.3, 0.15);
-	//btn2->Init();
-	//btn2->SetFunc(BtnFunc2);
-
-	player = new Player(Vector3f(0.1, 0.1, 0.1), Vector3f(0, 0, 0), Vector3f(25, 0, 25), 100, 1.5, 5);
-	player->SetMesh("Content/phoenix_ugv.md2");
+	_player = new Player(Vector3f(0.1, 0.1, 0.1), Vector3f(0, 0, 0), Vector3f(25, 0, 25), 100, 1.5, 5);
+	_player->SetMesh("Content/phoenix_ugv.md2");
 
 	Enemy* enemy = new Enemy(Vector3f(0.1, 0.1, 0.1), Vector3f(0, 0, 0), Vector3f(10, 0, 10), 50, 1, 3);
 	enemy->SetMesh("Content/phoenix_ugv.md2");
-	EnemyAI* enemyAI = new EnemyAI(player, enemy);
+	EnemyAI* enemyAI = new EnemyAI(_player, enemy);
 	Enemy* enemy2 = new Enemy(Vector3f(0.1, 0.1, 0.1), Vector3f(0, 0, 0), Vector3f(30, 0, 12), 50, 1, 3);
 	enemy2->SetMesh(enemy->GetMesh());
-	EnemyAI* enemyAI2 = new EnemyAI(player, enemy2);
-	enemy3 = new Enemy(Vector3f(0.2, 0.1, 0.2), Vector3f(0, 20, 0), Vector3f(40, 0, 43), 50, 1, 3);
-	enemy3->SetMesh(enemy->GetMesh());
-	bossAI = new BossAI(player, enemy3);
-
-	/*enemy4 = new Enemy(Vector3f(0.2, 0.1, 0.2), Vector3f(0, 30, 0), Vector3f(45, 0, 19), 50, 1, 3);
-	enemy4->SetMesh(enemy->GetMesh());
-	bossAI = new BossAI(player, enemy4);*/
+	EnemyAI* enemyAI2 = new EnemyAI(_player, enemy2);
+	boss = new Enemy(Vector3f(0.2, 0.1, 0.2), Vector3f(0, 20, 0), Vector3f(40, 0, 43), 50, 1, 3);
+	boss->SetMesh(enemy->GetMesh());
+	bossAI = new BossAI(_player, boss);
 
 	enemies.emplace_back(std::make_pair(enemy, enemyAI));
 	enemies.emplace_back(std::make_pair(enemy2, enemyAI2));
@@ -183,9 +118,8 @@ void GameStateFunc::PlayInitial()//资源初始化
 	gPersProjInfo.zNear = 1.0f;
 	gPersProjInfo.zFar = 500.0f;
 
-	skybox = new SkyBox(pCamera, gPersProjInfo);
-
-	skybox->Init("", "Content/sp3right.jpg",
+	skyBox = new SkyBox(pCamera, gPersProjInfo);
+	skyBox->Init("", "Content/sp3right.jpg",
 		"Content/sp3left.jpg",
 		"Content/sp3top.jpg",
 		"Content/sp3bot.jpg",
@@ -196,8 +130,7 @@ void GameStateFunc::PlayInitial()//资源初始化
 	p.SetPerspectiveProj(gPersProjInfo);
 
 	barriage = new Barriage();
-	barriage->LoadBarriage("Content/spider.obj");
-	barriage->BulletInitial(player->GetPos(), player->GetRotation());
+	barriage->LoadBarriage("Content/spider.obj");	
 }
 
 void GameStateFunc::PlayUpdate()
@@ -218,9 +151,9 @@ void GameStateFunc::WinEndUpdate()
 	uiTechnique->Enable();
 	uiTechnique->SetSampler(0);
 
-	GameWinLabel->Render();
-	RestartButton->Render();
-	EndButton->Render();
+	gameWinLabel->Render();
+	restartButton->Render();
+	endButton->Render();
 }
 
 void GameStateFunc::FailEndUpdate()
@@ -230,9 +163,34 @@ void GameStateFunc::FailEndUpdate()
 	uiTechnique->Enable();
 	uiTechnique->SetSampler(0);
 
-	GameFailLabel->Render();
-	RestartButton->Render();
-	EndButton->Render();
+	gameFailLabel->Render();
+	restartButton->Render();
+	endButton->Render();
+}
+
+Player* GameStateFunc::player()
+{
+	return _player;
+}
+
+const std::vector<std::pair<Enemy*, EnemyAI*>>& GameStateFunc::Enemies()
+{
+	return enemies;
+}
+
+Enemy* GameStateFunc::Boss()
+{
+	return boss;
+}
+
+Barriage* GameStateFunc::BarriageToUse()
+{
+	return barriage;
+}
+
+std::vector<Bullet*>& GameStateFunc::Bullets()
+{
+	return bullets;
 }
 
 void GameStateFunc::LightInit()
@@ -260,25 +218,23 @@ void GameStateFunc::ShadowMapPass()
 	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	p.SetCamera(*pShadowCamera);
-	if (player != nullptr && player->isDead == false)
+	if (_player != nullptr && _player->isDead == false)
 	{
-		p.Scale(player->GetScale());
-		p.WorldPos(player->GetPos());
-		p.Rotate(player->GetRotation());
+		p.Scale(_player->GetScale());
+		p.WorldPos(_player->GetPos());
+		p.Rotate(_player->GetRotation());
 		//glUniformMatrix4fv(gShadowWVP, 1, GL_TRUE, (const GLfloat*)p.GetWVPTrans());		
 		shadowTechnique->SetWVP(p.GetWVPTrans());
-		player->Render();
+		_player->Render();
 	}
 
 	for (auto ite = enemies.begin(); ite != enemies.end();)
 	{
 		if (ite->first->isDead == false)
 		{
-
 			p.Scale(ite->first->GetScale());
 			p.WorldPos(ite->first->GetPos());
 			p.Rotate(ite->first->GetRotation());
-			//glUniformMatrix4fv(gShadowWVP, 1, GL_TRUE, (const GLfloat*)p.GetWVPTrans());
 			shadowTechnique->SetWVP(p.GetWVPTrans());
 			ite->first->Render();
 		}
@@ -289,11 +245,9 @@ void GameStateFunc::ShadowMapPass()
 	{
 		if ((*ite)->isEnd == false)
 		{
-
 			p.Scale((*ite)->GetScale());
 			p.WorldPos((*ite)->GetPos());
 			p.Rotate((*ite)->GetRotation());
-			//glUniformMatrix4fv(gShadowWVP, 1, GL_TRUE, (const GLfloat*)p.GetWVPTrans());
 			shadowTechnique->SetWVP(p.GetWVPTrans());
 			(*ite)->GetGeo()->Render();
 		}
@@ -310,18 +264,7 @@ void GameStateFunc::RenderPass()
 	p.SetCamera(*pCamera);
 	p.SetPerspectiveProj(gPersProjInfo);
 
-	skyboxTechnique->Enable();
-	Pipeline p;
-	p.Scale(20.0f, 20.0f, 20.0f);
-	p.Rotate(0.0f, 0.0f, 0.0f);
-	p.WorldPos(pCamera->GetPos().x, pCamera->GetPos().y, pCamera->GetPos().z);
-	p.SetCamera(pCamera->GetPos(), pCamera->GetTarget(), pCamera->GetUp());
-	p.SetPerspectiveProj(gPersProjInfo);
-
-	skyboxTechnique->SetSampler(0);
-	skyboxTechnique->SetWVP(p.GetWVPTrans());
-	skybox->Render();
-
+	SkyBoxRender();
 	/*shadowShaderProgram->Bind();
 	p.Scale(quadScale);
 	Vector3f test = quadPos + Vector3f(0, 17, 0);
@@ -330,16 +273,13 @@ void GameStateFunc::RenderPass()
 	glUniformMatrix4fv(gShadowWVP, 1, GL_TRUE, (const GLfloat*)p.GetWVPTrans());
 	shadowMapFBO.BindForReading(0);
 	pGeo->Render();*/
-
 	//shaderProgram->Bind();
+	
 	lightingTechnique->Enable();
-
 	lightingTechnique->SetLight(directionLight, spotLight);
-
 	lightingTechnique->SetSampler(0);
 	lightingTechnique->SetShadowSampler(1);
 	shadowMapFBO.BindForReading(1);
-
 
 	p.SetObjectInfo(quadPos, quadScale, quadRotate);
 
@@ -349,26 +289,25 @@ void GameStateFunc::RenderPass()
 
 	lightingTechnique->SetLightWVP(p.GetWVPTrans());
 	pTexture->Bind();
-	//shadowMapFBO.BindForReading(0);
+	//shadowMapFBO.BindForReading(0);	
 	pGeo->Render();
 
 	p.SetCamera(*pCamera);
-	if (player != nullptr && player->isDead == false)
+	if (_player != nullptr && _player->isDead == false)
 	{
-		p.SetObjectInfo(player->GetPos(), player->GetScale(), player->GetRotation());
+		p.SetObjectInfo(_player->GetPos(), _player->GetScale(), _player->GetRotation());
 
 		lightingTechnique->SetWorld(p.GetWorldTrans());
 		lightingTechnique->SetWVP(p.GetWVPTrans());
 		p.SetCamera(*pShadowCamera);
 
 		lightingTechnique->SetLightWVP(p.GetWVPTrans());
-		player->Render();
+		_player->Render();
 		p.SetCamera(*pCamera);
 	}
-	else if (player != nullptr)
+	else
 	{
-		delete player;
-		player = nullptr;
+		SAFE_DELETE(_player);
 	}
 
 	for (auto ite = enemies.begin(); ite != enemies.end();)
@@ -379,7 +318,6 @@ void GameStateFunc::RenderPass()
 			lightingTechnique->SetWorld(p.GetWorldTrans());
 			lightingTechnique->SetWVP(p.GetWVPTrans());
 			p.SetCamera(*pShadowCamera);
-
 			lightingTechnique->SetLightWVP(p.GetWVPTrans());
 			ite->first->Render();
 			ite->second->Update(bullets);
@@ -391,22 +329,21 @@ void GameStateFunc::RenderPass()
 			auto toDel1 = ite->first;
 			auto toDel2 = ite->second;
 			ite = enemies.erase(ite);
-			Destroy(toDel1);
-			delete toDel2;
-			toDel2 = nullptr;
+			SAFE_DELETE(toDel1);
+			SAFE_DELETE(toDel2);
 		}
 	}
 
-	if (enemy3->isDead == false)
+	if (boss->isDead == false)
 	{
-		p.SetObjectInfo(enemy3->GetPos(), enemy3->GetScale(), enemy3->GetRotation());
+		p.SetObjectInfo(boss->GetPos(), boss->GetScale(), boss->GetRotation());
 
 		lightingTechnique->SetWorld(p.GetWorldTrans());
 		lightingTechnique->SetWVP(p.GetWVPTrans());
 		p.SetCamera(*pShadowCamera);
 
 		lightingTechnique->SetLightWVP(p.GetWVPTrans());
-		enemy3->Render();
+		boss->Render();
 		bossAI->Update(bullets);
 		p.SetCamera(*pCamera);
 	}
@@ -419,25 +356,27 @@ void GameStateFunc::RenderPass()
 			lightingTechnique->SetWorld(p.GetWorldTrans());
 			lightingTechnique->SetWVP(p.GetWVPTrans());
 			p.SetCamera(*pShadowCamera);
-
 			lightingTechnique->SetLightWVP(p.GetWVPTrans());
 			(*ite)->GetGeo()->Render();
 			(*ite)->Move();
-			(*ite)->CheckHurt();
+			(*ite)->CheckHurt(_player,enemies, boss);
 			ite++;
-
 			p.SetCamera(*pCamera);
 		}
 		else
 		{
 			auto toDel = *ite;
 			ite = bullets.erase(ite);
-			Destroy(toDel);
+			SAFE_DELETE(toDel);
 		}
 	}
-
-	//pstest->Render(50, p.GetVPTrans(), pCamera->GetPos());
 	
+	ParticlesRender();
+	BarriageRender();
+}
+
+void GameStateFunc::ParticlesRender()
+{
 	for (auto ite = particles.begin(); ite != particles.end(); )
 	{
 		if (ite->times == 180)
@@ -450,47 +389,94 @@ void GameStateFunc::RenderPass()
 			ite++;
 		}
 		else if (ite->times == 0)
-		{
-			//std::cout << "test ps delete" << std::endl;
-			delete ite->ps;
-			ite->ps = nullptr;
-			ite=particles.erase(ite);
+		{			
+			SAFE_DELETE(ite->ps);
+			ite = particles.erase(ite);
 		}
 		else
 		{
 			ite->times -= 1;
 			//std::cout << "test ps update" << std::endl;
-			if(ite->ps!=nullptr)
+			if (ite->ps != nullptr)
 				ite->ps->Render(50, p.GetVPTrans(), pCamera->GetPos());
 			ite++;
-		}				
+		}
 	}
+}
 
+void GameStateFunc::BarriageRender()
+{
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	barriage->Update(p);
+	barriage->Update(p,enemies, boss);
 	glDisable(GL_BLEND);
+}
+
+void GameStateFunc::SkyBoxRender()
+{
+	skyboxTechnique->Enable();
+	Pipeline p;
+	p.Scale(20.0f, 20.0f, 20.0f);
+	p.Rotate(0.0f, 0.0f, 0.0f);
+	p.WorldPos(pCamera->GetPos().x, pCamera->GetPos().y, pCamera->GetPos().z);
+	p.SetCamera(pCamera->GetPos(), pCamera->GetTarget(), pCamera->GetUp());
+	p.SetPerspectiveProj(gPersProjInfo);
+
+	skyboxTechnique->SetSampler(0);
+	skyboxTechnique->SetWVP(p.GetWVPTrans());
+	skyBox->Render();
+}
+
+GameStateFunc::GameStateFunc()
+{
+	uiTechnique = new UITechnique();
+	shadowTechnique = new ShadowTechnique();
+	skyboxTechnique = new SkyBoxTechnique();
+	lightingTechnique = new LightingTechnique();
+
+	quadPos = Vector3f(0, 0, 0);
+	quadRotate = Vector3f(0, 0, 0);
+	quadScale = Vector3f(100, 0, 100);
+
+	gameLabel = new UIElement("Content/GameLabel.jpg", -0.4, 0.3, 0.8, 0.4);
+	gameLabel->Init();
+	gameWinLabel = new UIElement("Content/VictoryEnd.jpg", -0.4, 0.3, 0.8, 0.4);
+	gameWinLabel->Init();
+	gameFailLabel = new UIElement("Content/FailureEnd.jpg", -0.4, 0.3, 0.8, 0.4);
+	gameFailLabel->Init();
+
+	pCamera = new Camera(WINDOW_WIDTH, WINDOW_HEIGHT, Vector3f(20, 30, -20), Vector3f(0, -0.3, 0.9), Vector3f(0, 1, 0));
+	pShadowCamera = new Camera(WINDOW_WIDTH, WINDOW_HEIGHT, spotLight.Position, spotLight.Direction, Vector3f(0.0, 1.0, 0.0));
+	pTexture = new Texture("test.png");
+}
+
+GameStateFunc::~GameStateFunc()
+{
+	SAFE_DELETE(uiTechnique);
+	SAFE_DELETE(shadowTechnique);
+	SAFE_DELETE(skyboxTechnique);
+	SAFE_DELETE(lightingTechnique);
+	SAFE_DELETE(pTexture);
+	SAFE_DELETE(pCamera);
+	SAFE_DELETE(pShadowCamera);
+	SAFE_DELETE(uiTechnique);
+	SAFE_DELETE(gameLabel);
+	SAFE_DELETE(gameWinLabel);
+	SAFE_DELETE(gameFailLabel);
 }
 
 void GameStateFunc::GameClear()
 {
 	std::cout << "game clear" << std::endl;
-	if (player != nullptr)
-	{
-		delete player;
-		player = nullptr;
-	}
+	SAFE_DELETE(_player);
 	for (auto ite = enemies.begin(); ite != enemies.end(); )
 	{
 		if (ite->first != nullptr)
 		{
 			auto toDel1 = ite->first;
 			auto toDel2 = ite->second;
-			ite = enemies.erase(ite);
-			delete toDel1;
-			toDel1 = nullptr;
-			delete toDel2;
-			toDel2 = nullptr;
+			SAFE_DELETE(toDel1);
+			SAFE_DELETE(toDel2);
 		}
 		else
 		{
@@ -499,29 +485,14 @@ void GameStateFunc::GameClear()
 	}
 	for (auto ite = particles.begin(); ite != particles.end(); )
 	{
-		delete ite->ps;
-		ite->ps = nullptr;
+		SAFE_DELETE(ite->ps);
 		ite = particles.erase(ite);
 	}
-	if (enemy3 != nullptr)
-	{
-		delete enemy3;
-		enemy3 = nullptr;
-	}
-	if (pGeo != nullptr)
-	{
-		delete pGeo;
-		pGeo = nullptr;
-	}
-	if (ps != nullptr)
-	{
-		delete ps;
-		ps = nullptr;
-	}
-	if (pb != nullptr)
-	{
-		delete pb;
-		pb = nullptr;
-	}
+	SAFE_DELETE(boss);
+	SAFE_DELETE(bossAI);
+	SAFE_DELETE(pGeo);
+	SAFE_DELETE(ps);
+	SAFE_DELETE(pb);
+	SAFE_DELETE(skyBox);
 }
 

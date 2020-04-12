@@ -1,6 +1,11 @@
 #pragma once
+#include <vector>
 #include <algorithm>
 #include "../GameLayer/RenderItem.h"
+
+class Player;
+class Enemy;
+class EnemyAI;
 
 class Bullet :public RenderItem
 {
@@ -21,7 +26,7 @@ public:
 	inline std::shared_ptr<Geometry>& GetGeo();
 	
 	void Move();
-	void CheckHurt();
+	void CheckHurt(Player* &player,std::vector<std::pair<Enemy*,EnemyAI*>> &enemies,Enemy* &boss);
 };
 
 inline void Bullet::SetGeo(std::shared_ptr<Geometry>& _geo)
