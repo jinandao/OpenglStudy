@@ -5,6 +5,7 @@
 #include "../GameLayer/Pipeline.h"
 #include "../EngineLayer/MathTools.h"
 #include "../GameLayer/skybox.h"
+#include "../GameLayer/ParticleSystem.h"
 #include <vector>
 
 class UITechnique;
@@ -25,6 +26,7 @@ class EnemyAI;
 class BossAI;
 class Barriage;
 class Bullet;
+class GlobalVariablesManager;
 
 class GameStateFunc
 {
@@ -62,6 +64,8 @@ private:
 	UIElement* gameWinLabel;
 	UIElement* gameFailLabel;
 
+	std::vector<ParticleElement> particles;
+
 private:
 	void LightInit();
 	void ShadowMapPass();
@@ -86,4 +90,6 @@ public:
 	Enemy* Boss();
 	Barriage* BarriageToUse();
 	std::vector<Bullet*>& Bullets();
+
+	GlobalVariablesManager* manager;
 };

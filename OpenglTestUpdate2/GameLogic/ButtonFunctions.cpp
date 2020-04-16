@@ -1,14 +1,17 @@
 #include "ButtonFunctions.h"
 #include <stdlib.h>
 #include <iostream>
+#include "../GlobalVariablesManager.h"
 
-extern bool isChangedState;
-extern enum GameState gamestate;
+GlobalVariablesManager* ButtonFunctions::manager = nullptr;
 
 void ButtonFunctions::GameStartButton()
 {
-	isChangedState = true;
-	gamestate = GameState::update;
+	if (manager != nullptr)
+	{
+		manager->isChangedState = true;
+		manager->gamestate = GameState::update;
+	}
 }
 
 void ButtonFunctions::GameEndButton()

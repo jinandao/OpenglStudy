@@ -20,14 +20,10 @@
 #include "../EngineLayer/PSBillboardTechnique.h"
 #include "../GameLayer/UIElement.h"
 #include "../GameLogic/ButtonFunctions.h"
+#include "../GlobalVariablesManager.h"
 
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
-
-extern std::vector<ParticleElement> particles;
-extern Button* startButton;
-extern Button* restartButton;
-extern Button* endButton;
 
 void GameStateFunc::BeginUpdate()
 {
@@ -36,7 +32,7 @@ void GameStateFunc::BeginUpdate()
 	uiTechnique->Enable();
 	uiTechnique->SetSampler(0);
 	gameLabel->Render();
-	startButton->Render();
+	manager->startButton->Render();
 }
 
 void GameStateFunc::PlayInitial()//资源初始化
@@ -99,13 +95,13 @@ void GameStateFunc::PlayInitial()//资源初始化
 	_player = new Player(Vector3f(0.1, 0.1, 0.1), Vector3f(0, 0, 0), Vector3f(25, 0, 25), 100, 1.5, 5);
 	_player->SetMesh("Content/phoenix_ugv.md2");
 
-	Enemy* enemy = new Enemy(Vector3f(0.1, 0.1, 0.1), Vector3f(0, 0, 0), Vector3f(10, 0, 10), 50, 1, 3);
+	Enemy* enemy = new Enemy(Vector3f(0.1, 0.1, 0.1), Vector3f(0, 0, 0), Vector3f(10, 0, 10), 50, 1, 3,&particles);
 	enemy->SetMesh("Content/phoenix_ugv.md2");
 	EnemyAI* enemyAI = new EnemyAI(_player, enemy);
-	Enemy* enemy2 = new Enemy(Vector3f(0.1, 0.1, 0.1), Vector3f(0, 0, 0), Vector3f(30, 0, 12), 50, 1, 3);
+	Enemy* enemy2 = new Enemy(Vector3f(0.1, 0.1, 0.1), Vector3f(0, 0, 0), Vector3f(30, 0, 12), 50, 1, 3, &particles);
 	enemy2->SetMesh(enemy->GetMesh());
 	EnemyAI* enemyAI2 = new EnemyAI(_player, enemy2);
-	boss = new Enemy(Vector3f(0.2, 0.1, 0.2), Vector3f(0, 20, 0), Vector3f(40, 0, 43), 50, 1, 3);
+	boss = new Enemy(Vector3f(0.2, 0.1, 0.2), Vector3f(0, 20, 0), Vector3f(40, 0, 43), 50, 1, 3,&particles);
 	boss->SetMesh(enemy->GetMesh());
 	bossAI = new BossAI(_player, boss);
 
@@ -152,8 +148,8 @@ void GameStateFunc::WinEndUpdate()
 	uiTechnique->SetSampler(0);
 
 	gameWinLabel->Render();
-	restartButton->Render();
-	endButton->Render();
+	manager->restartButton->Render();
+	manager->endButton->Render();
 }
 
 void GameStateFunc::FailEndUpdate()
@@ -164,8 +160,8 @@ void GameStateFunc::FailEndUpdate()
 	uiTechnique->SetSampler(0);
 
 	gameFailLabel->Render();
-	restartButton->Render();
-	endButton->Render();
+	manager->restartButton->Render();
+	manager->endButton->Render();
 }
 
 Player* GameStateFunc::player()

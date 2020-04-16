@@ -2,8 +2,6 @@
 #include <freeglut.h>
 #include <iostream>
 #include "EngineLayer/OpenglTools.h"
-
-//#include "EngineLayer/Texture.h"
 #include "GameLayer/Camera.h"
 #include "GameLayer/UIElement.h"
 #include "GameLayer/ParticleSystem.h"
@@ -15,61 +13,52 @@
 #include "GameLogic/BarrageShoot.h"
 #include "GameLogic/GameState.h"
 #include "GameLogic/ButtonFunctions.h"
+#include "GlobalVariablesManager.h"
 
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
 
-
-std::vector<ParticleElement> particles;
-
-enum GameState gamestate;
-bool isChangedState;
-
-GameStateFunc* gameApp;
-
-Button* startButton;
-Button* restartButton;
-Button* endButton;
+static class GlobalVariablesManager manager;
 
 static void RenderSceneCB()
 {
-	if (gamestate == GameState::begin)
+	if (manager.gamestate == GameState::begin)
 	{
-		gameApp->BeginUpdate();
+		manager.gameApp->BeginUpdate();
 	}
-	else if (gamestate == GameState::update)
+	else if (manager.gamestate == GameState::update)
 	{
-		if (isChangedState == true)
+		if (manager.isChangedState == true)
 		{
-			isChangedState = false;
-			gameApp->PlayInitial();
+			manager.isChangedState = false;
+			manager.gameApp->PlayInitial();
 		}
 		else
 		{
-			gameApp->PlayUpdate();
-			if (gameApp->Enemies().size() == 0&& gameApp->Boss()->isDead==true)
+			manager.gameApp->PlayUpdate();
+			if (manager.gameApp->Enemies().size() == 0&& manager.gameApp->Boss()->isDead==true)
 			{
-				isChangedState = true;
-				gamestate = GameState::winend;
+				manager.isChangedState = true;
+				manager.gamestate = GameState::winend;
 			}
-			if (gameApp->player()->isDead == true)
+			if (manager.gameApp->player()->isDead == true)
 			{
-				isChangedState = true;
-				gamestate = GameState::failend;
+				manager.isChangedState = true;
+				manager.gamestate = GameState::failend;
 			}
-			if (isChangedState == true)
+			if (manager.isChangedState == true)
 			{
-				gameApp->GameClear();
+				manager.gameApp->GameClear();
 			}
 		}
 	}
-	else if(gamestate==GameState::failend)
+	else if(manager.gamestate==GameState::failend)
 	{
-		gameApp->FailEndUpdate();
+		manager.gameApp->FailEndUpdate();
 	}
 	else
 	{
-		gameApp->WinEndUpdate();
+		manager.gameApp->WinEndUpdate();
 	}
 	glutSwapBuffers();
 }
@@ -87,14 +76,14 @@ static void MouseFuncTest(int button,int state,int x,int y)
 		{
 			float x1 = (x - WINDOW_WIDTH / 2.0) / (WINDOW_WIDTH*0.5);
 			float y1 = -(y - WINDOW_HEIGHT / 2.0) / (WINDOW_HEIGHT*0.5);
-			if (gamestate == GameState::begin)
+			if (manager.gamestate == GameState::begin)
 			{
-				startButton->IsClicked(x1, y1);
+				manager.startButton->IsClicked(x1, y1);
 			}
-			if (gamestate == GameState::winend|| gamestate ==GameState::failend)
+			if (manager.gamestate == GameState::winend|| manager.gamestate ==GameState::failend)
 			{
-				restartButton->IsClicked(x1, y1);
-				endButton->IsClicked(x1, y1);
+				manager.restartButton->IsClicked(x1, y1);
+				manager.endButton->IsClicked(x1, y1);
 			}
 		}
 	}
@@ -102,9 +91,9 @@ static void MouseFuncTest(int button,int state,int x,int y)
 
 static void KeyboardCB(unsigned char Key,int x,int y)
 {	
-	if (gameApp->player() != nullptr)
+	if (manager.gameApp->player() != nullptr)
 	{
-		gameApp->player()->TakeAction(Key, gameApp->Bullets(),gameApp->BarriageToUse());
+		manager.gameApp->player()->TakeAction(Key, manager.gameApp->Bullets(), manager.gameApp->BarriageToUse());
 	}
 }
 
@@ -130,27 +119,38 @@ int main(int argc, char** argv)
 	if (res != GLEW_OK) {
 		return 1;
 	}
+	
+	GameStateFunc* gameApp = new GameStateFunc();
 
-	gameApp = new GameStateFunc();
+	manager.gameApp = gameApp;
+	manager.isChangedState = false;
+	manager.gamestate = GameState::begin;
 
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-	gamestate = GameState::begin;
-	isChangedState = false;	
-
-	startButton = new Button("Content/GameStartButton.jpg", 0.5, -0.6, 0.3, 0.15);
+	Button* startButton = new Button("Content/GameStartButton.jpg", 0.5, -0.6, 0.3, 0.15);
 	startButton->Init();
 	startButton->SetFunc(ButtonFunctions::GameStartButton);
-	restartButton = new Button("Content/GameRestartButton.jpg", 0.65, -0.6, 0.3, 0.15);
+	Button* restartButton = new Button("Content/GameRestartButton.jpg", 0.65, -0.6, 0.3, 0.15);
 	restartButton->Init();
 	restartButton->SetFunc(ButtonFunctions::GameStartButton);
-	endButton = new Button("Content/GameEndButton.jpg", 0.3, -0.6, 0.3, 0.15);
+	Button* endButton = new Button("Content/GameEndButton.jpg", 0.3, -0.6, 0.3, 0.15);
 	endButton->Init();
 	endButton->SetFunc(ButtonFunctions::GameEndButton);
 
+	manager.startButton = startButton;
+	manager.restartButton = restartButton;
+	manager.endButton = endButton;
+
+	gameApp->manager = &manager;
+	ButtonFunctions::manager = &manager;
+
 	glutMainLoop();
 
-	delete gameApp;
+	SAFE_DELETE(manager.gameApp);
+	SAFE_DELETE(manager.startButton);
+	SAFE_DELETE(manager.restartButton);
+	SAFE_DELETE(manager.endButton);
 	
 	return 0;
 }
